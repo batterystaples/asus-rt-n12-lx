@@ -1,0 +1,11 @@
+#!/bin/sh
+#
+
+if [ $# -lt 1 ]; then echo "Usage: $0 <addr>";  exit 1 ; fi
+
+if [ $# -eq 1 ]; then
+	iwpriv wlan0 read_mem dw,$1,1
+else
+	iwpriv wlan0 read_mem dw,$1,$2
+fi
+

@@ -1,0 +1,24 @@
+Pre-requist:
+	1. Run "./install_misc.sh" first.
+
+Build rtl819x:
+	1. Change directory to "rtl819x".
+	2. make MODEL_NAME=RT-N12LX
+	
+	You can use the below make commands to compile what you want.
+	- make bootloader
+		build bootloader
+	- make users
+		build the users applications
+	- make linux
+		build the kernel files
+	- make romfs
+		copy all the application binary files into romfs
+	- make image
+		compress the root.bin and linux.bin
+	
+	The final firmware will be placed in rtl819x/image. The detail description for firmware are as below:
+	- boot.bin: bootloader image
+	- root.bin: rootfs binary image
+   	- linux.bin: linux-2.6 kernel image
+	- RT-N12LX_version.trx: The image includes root.bin and linux.bin

@@ -1,0 +1,50 @@
+// Tx Power Limit Table - beta 02
+// Format:
+// table index->      table        <index>
+// channel limmit->   channel    <limit (in dBm)>
+// (optional)         start:end    <limit (in dBm)>
+
+//===========================================
+// Table 1: FCC, 20M mode
+// start from here
+table	1
+1:3	17	// band edge
+10:14	17	// band edge
+
+// 5G band 1 & 2
+36	17	// band edge
+40:60	17
+64	17	// band edge
+
+// 5G band 3
+100	17	// band edge
+
+//===========================================
+// Table 2: FCC, 40M mode
+// start from here
+table	2
+3	18	// band edge
+9	18	// band edge
+
+38	18	// band edge
+46:54	18
+62	18	// band edge
+
+102	18	// band edge
+
+//===========================================
+// Table 3: CE, 20M mode
+// start from here
+table	3
+1:140	23
+
+
+//===========================================
+// Table 4: CE, 40M mode
+// start from here
+table	4
+1:134	23
+
+//===========================================
+
+

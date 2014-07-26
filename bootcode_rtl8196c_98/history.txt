@@ -1,0 +1,51 @@
+Project TAG: TAG_0_0_0_2
+======================
+Reasons(20110527):
+	1. Modify checking method of firmware image during upgradeing and booting.
+
+Modification:
+	1. SDK2.4/bootcode_rtl8196c_98/boot/init/eth_tftpd.c (1.3->1.4)
+	2. SDK2.4/bootcode_rtl8196c_98/history.txt (1.2->1.3)
+Search patterns:
+	Edison
+Author:
+	Edison Shih
+
+
+Project TAG: TAG_0_0_0_1
+======================
+Reasons(20110324):
+	1. Modify checking method of firmware image during upgradeing and booting.
+
+Modification:
+	1. SDK2.4/bootcode_rtl8196c_98/boot/init/eth_tftpd.c (1.2->1.3)
+	2. SDK2.4/bootcode_rtl8196c_98/boot/init/utility.c (1.2->1.3)
+	3. SDK2.4/bootcode_rtl8196c_98/history.txt (1.2)
+Search patterns:
+	Alicia
+Author:
+	Alicia Wang
+
+
+
+Project TAG: TAG_0_0_0_0
+======================
+Reasons(20110323):
+	1. Modified make flow and add padding to boot.bin.
+	2. Combine the history.txt for bootloader modification.
+		2.1. change led control for rescue mode (20110303)
+		2.2. change rescue mode for asus utility (20110227)
+
+Modification:
+	1. SDK2.4/bootcode_rtl8196c_98/btcode/cvimg.c (1.1)
+	   SDK2.4/bootcode_rtl8196c_98/btcode/extract_version.sh (1.1)
+           SDK2.4/bootcode_rtl8196c_98/btcode/Makefile (1.1->1.2)
+	2. SDK2.4/bootcode_rtl8196c_98/boot/monitor/monitor.c (1.1->1.2)
+   	   SDK2.4/bootcode_rtl8196c_98/boot/init/utility.c (1.1->1.2)
+	   SDK2.4/bootcode_rtl8196c_98/boot/init/eth_tftpd.c (1.1->1.2)
+	3. SDK2.4/bootcode_rtl8196c_98/history.txt (1.1)
+Search patterns:
+	Jerry
+Author:
+	Jerry Jian
+

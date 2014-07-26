@@ -1,0 +1,25 @@
+
+comment "rtl8196c"
+choice
+prompt "Selected Target of SDK"
+default CONFIG_RTL819X_GW
+config RTL819X_GW
+	bool "11nRouter_GW"
+config ROUTER_POCKET_SUPPORT
+	bool "11nPocket_Router"
+config AP_POCKET_SUPPORT
+	bool "11nPocket_AP"
+endchoice
+
+choice
+prompt "Selected Board Configuration"
+default MODEL_RTL8196C_SPI_SQUASHFS 
+config MODEL_RTL8196C_MP
+	bool "MP"
+config MODEL_RTL8196C_SPI_SQUASHFS
+	bool "SPI flash + Squashfs"
+config MODEL_RTL8196C_AP_SPI_SQUASHFS
+	bool "AP, SPI slash + Squash"
+endchoice
+
+

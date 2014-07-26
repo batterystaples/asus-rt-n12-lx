@@ -1,0 +1,190 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
+<meta HTTP-EQUIV="Expires" CONTENT="-1">
+<link rel="stylesheet" type="text/css" href="../form_style.css">
+<link rel="stylesheet" type="text/css" href="qis_style.css">
+<style>
+span{
+	border:0px solid #CCC;
+	color:#00f;
+	font-size:12px;
+	font-family:Arial, Helvetica, sans-serif;
+	/*width:27px;*/
+	text-align:right;
+	margin:0px auto;
+	ime-mode:disabled;
+}
+
+.black_line{
+	border: 1px solid #000000;
+	width:480px;
+	margin-left: 10px;
+}
+</style>
+
+<script type="text/JavaScript" src="/jquery.js"></script>
+<script>
+<% wanlink(); %>
+var encrypt = <% getIndex("encrypt"); %>;	//2011.03.17 Jerry
+var auth_mode = '';	//2011.03.17 Jerry
+var reIP = '<% getInfo("ip-rom"); %>';	//2011.03.17 Jerry
+var wan_hwaddr = '<% getInfo("wan_hwaddr"); %>';	//2011.03.17 Jerry
+var wan_clone_mac = '<% getInfo("wanMac"); %>';	//2011.03.17 Jerry
+
+function QKfinish_load_body(){
+	//2011.03.17 Jerry {
+	switch(encrypt) {
+		case 0:
+			auth_mode = "disabled";
+			break;
+		case 1:
+			auth_mode = "open";
+			break;
+		case 2:
+			auth_mode = "wpa";
+			break;
+		case 4:
+			auth_mode = "wpa2";
+			break;
+		case 6:
+			auth_mode = "wpa2_mixed";
+			break;
+	}
+	//2011.03.17 Jerry }
+
+	parent.document.title = "ASUS Wireless Router <#Web_Title#> - <#QKSet_all_title#>";
+	
+	// Wireless Security
+	$("#ssid_2_item")[0].innerHTML = "<#QIS_finish_wireless_item1#>";
+	$("#ssid_2")[0].innerHTML = check_string_len(decodeURIComponent(document.form.rt_ssid2.value));
+	$("#security_item2")[0].innerHTML = "<#QIS_finish_wireless_item2#>";
+
+	if(auth_mode == "wpa2_mixed"){	//2011.03.17 Jerry
+		$("#security2")[0].innerHTML = "WPA-Auto-Personal - AES+TKIP";
+		$("#key2_item")[0].innerHTML = "<#QIS_finish_wireless_item3#>";
+		$("#key2")[0].innerHTML = check_string_len(decodeURIComponent(document.form.rt_wpa_psk.value));
+	}
+	else
+	{
+		$("#security2")[0].innerHTML = "Open System";
+		$("#key2_block")[0].style.display = "none";
+	}	
+	// Connection Status
+	$("#mac_item")[0].innerHTML = "Router's MAC";
+	//2011.03.17 Jerry {
+	if(wan_clone_mac.length > 0 && wan_clone_mac != "000000000000") {
+		wan_clone_mac = wan_clone_mac.toUpperCase();
+		$("#mac")[0].innerHTML = wan_clone_mac.substr(0,2) + ":" + wan_clone_mac.substr(2,2) + ":" +
+					wan_clone_mac.substr(4,2) + ":" + wan_clone_mac.substr(6,2) + ":" +
+					wan_clone_mac.substr(8,2) + ":" + wan_clone_mac.substr(10,2);
+	}
+	else
+		$("#mac")[0].innerHTML = wan_hwaddr.toUpperCase();
+	//2011.03.17 Jerry }
+	$("#wantype_item")[0].innerHTML = "WAN type";
+	$("#wantype")[0].innerHTML = wanlink_type();
+	$("#wanip_item")[0].innerHTML = "WAN IP";
+	$("#wanip")[0].innerHTML = '<% getInfo("wan_ipaddr"); %>';	//2011.03.16 Jerry
+	$("#lanip_item")[0].innerHTML = "LAN IP";
+	$("#lanip")[0].innerHTML = reIP;
+	
+	// System account
+	$("#account_item")[0].innerHTML = "<#QIS_finish_admin_item1#>";
+	$("#account")[0].innerHTML = '<% getInfo("http_username"); %>';	//2011.03.16 Jerry
+	$("#password_item")[0].innerHTML = "<#QIS_finish_admin_item2#>";
+	$("#password")[0].innerHTML = '<% getInfo("http_passwd"); %>';	//2011.03.16 Jerry
+}
+
+function gotoASUS(){
+	parent.location.href = "http://support.asus.com";
+}
+
+function gotoAdvSetting(){
+	parent.location = "/wlbasic.asp";	//2011.03.14 Jerry
+}
+
+function addBookmarkForBrowser(sTitle) {
+	 sTitle = sTitle+" - "+reIP;
+	 
+   if(document.all)
+      window.external.addFavorite('http://'+reIP, sTitle);
+   else if(window.sidebar && window.sidebar.addPanel)
+      window.sidebar.addPanel(sTitle, 'http://'+reIP, "");
+   else{
+			addBookmarkForBrowser = function(){
+				alert("<#Browser_action_not_support_addfavorite#>");
+			}
+   }
+}
+
+function check_string_len(str){
+	if(str.length > 33)
+		str = str.substring(0,30) + "...";
+ 	
+	return str;
+}
+</script>
+</head>
+
+<body onLoad="QKfinish_load_body();" >
+<div class="QISmain">
+<div class="description_down" id="title_item"><#WPS_state_configured_success#></div>
+
+<table id="tblsetting_1" class="QISform2" width="400" border=0 cellpadding="4" cellspacing="0">
+	<tr>
+    <td width="50%" style="padding-left:15px"><span id="mac_item"></span>: <span id="mac"></span></td>
+		<td><div id="ssid2_block"><span id="ssid_2_item"></span>: <span id="ssid_2"></span></div></td>
+	</tr>
+	<tr>
+    <td width="50%" style="padding-left:15px"><span id="wantype_item"></span>: <span id="wantype"></span></td>
+		<td><div id="key2_block"><span id="key2_item"></span>: <span id="key2"></span></div></td>
+	</tr>
+	<tr>
+    <td width="50%" style="padding-left:15px"><span id="wanip_item"></span>: <span id="wanip"></span></td>
+		<td><div id="security2_block"><span id="security_item2"></span>: <span id="security2"></span></div></td>
+	</tr>
+	<tr>
+		<td width="50%" style="padding-left:15px"><span id="lanip_item"></span>: <span id="lanip"></span></td>
+	</tr>
+	<tr>
+		<td width="50%" style="padding-left:15px"><span id="account_item"></span>: <span id="account"></span></td>
+	</tr>
+	<tr>
+		<td width="50%" style="padding-left:15px"><span id="password_item"></span>: <span id="password"></span></td>
+	</tr>
+</table>
+<table class="black_line" cellpadding="0" cellspacing="0">
+	<tr><td></td></tr>
+</table>
+
+<table class="QISform" width="400" border=0 cellpadding="0" cellspacing="0" style="font-size:12px;">
+	<tr>
+		<td>
+			<ol>
+				<li style="margin-top:7px;">
+					<a href="javascript:gotoASUS();"><#QKSet_finish_moveto1#></a>
+				</li>
+				<li style="margin-top:7px;">
+					<a href="javascript:gotoAdvSetting();"><#QKSet_finish_moveto7#></a>
+				</li>
+				<li style="margin-top:7px;">
+					<a href="javascript:addBookmarkForBrowser('ASUS <#Web_Title#>');"><#Browser_action_addfavorite#></a>
+				</li>
+			</ol>
+		</td>
+	</tr>
+</table>
+</div>
+
+<br>
+
+<div class="QISfoot"></div>
+
+<form name="form" style="display:none;">
+<input type="hidden" name="rt_ssid2" value="<% apmib_char_to_ascii("WLANConfig11b", "ssid"); %>">
+<input type="hidden" name="rt_wpa_psk" value="<% apmib_char_to_ascii("WLANConfig11b", "pskValue"); %>">
+</form>
+</body>
+</html>

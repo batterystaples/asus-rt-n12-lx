@@ -1,0 +1,287 @@
+#
+# Makefile for the GoAhead web server reference source base
+#  for the Linux OS
+#
+# Copyright (c) GoAhead Software, Inc. 1995-2000
+#
+# $Id: Makefile-x86,v 1.2 2011/05/16 01:58:10 jerry_jian Exp $
+#
+
+all:	compile
+
+ARCH	= libwebs.a
+NAME	= webs
+
+# User Management switch
+UMSW	= -DUSER_MANAGEMENT_SUPPORT
+
+# Digest Access switch
+DASW	= -DDIGEST_ACCESS_SUPPORT
+
+# routing support
+ROUTE = -DROUTE_SUPPORT
+
+# SSL switches (enable all to activate)
+#SSLINC = /RSASSL/library/include
+#SSLLIB = /RSASSL/library/lib/libsslc.a
+#david
+#MATRIXSSL=1
+#OPENSSL=1
+ifeq ($(strip $(OPENSSL)),1)
+SSLINC = /usr/local/include 
+#SSLLIB = /usr/local/lib/libssl.a /usr/local/lib/libcrypto.a
+SSLLIB = /usr/lib/libssl.a /usr/lib/libcrypto.a -lkrb5
+SSLSW	= -DOPENSSL -DWEBS_SSL_SUPPORT -I$(SSLINC) -I/usr/kerberos/include -L/usr/kerberos/lib 
+SSLPATCHFILE = ../websSSL.o
+endif
+
+
+ifeq ($(strip $(MATRIXSSL)),1)
+SSLINC = ../matrixssl/examples
+SSLLIB =  ../matrixssl/src/libmatrixssl.a -lpthread
+#-lkrb5
+SSLSW	= -DMATRIX_SSL  -DWEBS_SSL_SUPPORT -I$(SSLINC) 
+SSLPATCHFILE = ../matrix_ssl.o
+MATRIXSSL = libmatrixssl.a
+endif
+
+# If-Modified-Support switches (requires math library, libm.a)
+# IFMODSW = -DWEBS_IF_MODIFIED_SUPPORT
+# IFMODLIB = /usr/lib/libm.a
+
+# Dependencies
+DEPEND_FILES	= ../asp.o ../balloc.o ../base64.o ../cgi.o ../default.o  \
+				  ../ejlex.o ../ejparse.o ../form.o \
+				  ../h.o ../handler.o ../mime.o ../misc.o ../page.o  \
+				  ../ringq.o ../rom.o \
+				  ../sock.o ../sockGen.o $(SSLPATCHFILE) \
+				  ../security.o ../sym.o ../uemf.o ../url.o ../value.o \
+				  ../md5c.o ../um.o ../umui.o ../websda.o ../emfdb.o \
+				  ../webrom.o ../webs.o ../websuemf.o main.o\
+			apmib.o fmtcpip.o utility.o mibtbl.o fmfwall.o\
+			fmget.o fmwlan.o fmmgmt.o version.o fmvpn.o fmddns.o fmroute.o 
+
+GWSUPP = -DHOME_GATEWAY  -DVPN_SUPPORT -DNO_ACTION -DDOWN_SIZE -DUNIVERSAL_REPEATER -DX86_SIMULATE
+#GWSUPP =  -DNO_ACTION
+WLANSUPP= -DWLAN_EASY_CONFIG -DHOME_GATEWAY -DVPN_SUPPORT -DDOS_SUPPORT #-DTLS_CLIENT
+
+# for 802.11s
+WLANSUPP += 
+#WLANSUPP += -D_11s_TEST_MODE_ -DCONFIG_RTK_MESH
+
+ifeq ($(CONFIG_MESH_ENABLE),y)
+	WLANSUPP += -DCONFIG_RTK_MESH -DSNMP_SUPPORT -D_MESH_ACL_ENABLE_ -DWIFI_SIMPLE_CONFIG 
+	ifeq ($(CONFIG_11S_TEST_MODE),y)
+		WLANSUPP += -D_11s_TEST_MODE_
+	endif	
+endif	
+
+
+CFLAGS	= -DWEBS -DUEMF -DOS="LINUX" -DLINUX $(GWSUPP) $(UMSW) $(DASW) $(SSLSW) $(IFMODSW) $(WLANSUPP) $(ROUTE)
+OTHERS	= -DB_STATS -DB_FILL -DDEBUG 
+DEBUG	= -g -Wall
+IFLAGS 	= -I..
+LDFLAGS	= $(SSLLIB) $(IFMODLIB)
+
+# =========================================================
+# added by Rock
+# =========================================================
+-include ../../../linux-2.4.18/.config
+ifneq ($(CONFIG_RTK_VOIP),n)
+ifneq ($(CONFIG_RTK_VOIP),)
+VOIP_SUPPORT=1
+endif
+endif
+
+ifdef VOIP_SUPPORT
+PWD := $(shell pwd)
+VOIP_APP = $(PWD)/../../rtk_voip
+VOIP_FILES = voip_flash.o voip_flash_mib.o voip_flash_tool.o voip_flash_server.o
+VOIP_WEB = $(VOIP_APP)/web/libweb_voip.a
+VOIP_FLAGS = -DVOIP_SUPPORT -I$(VOIP_APP)/includes -I$(VOIP_APP)/web -I$(PWD) -I$(PWD)/..
+DEPEND_FILES += $(VOIP_FILES)
+# voip default use gw setting  
+ROUTE =
+GWSUPP = -DHOME_GATEWAY -DNO_ACTION -DDOWN_SIZE -DUNIVERSAL_REPEATER -DX86_SIMULATE
+WLANSUPP = -DWLAN_EASY_CONFIG -DHOME_GATEWAY -DDOS_SUPPORT -DWIFI_SIMPLE_CONFIG #-DTLS_CLIENT
+
+# for 802.11s
+WLANSUPP += -DSNMP_SUPPORT
+# WLANSUPP += -D_11s_TEST_MODE_ -DCONFIG_RTK_MESH 
+# for 802.11s
+
+CFLAGS = -DWEBS -DUEMF -DOS="LINUX" -DLINUX $(GWSUPP) $(UMSW) $(DASW) $(SSLSW) $(IFMODSW) $(WLANSUPP) $(ROUTE)
+CFLAGS += $(VOIP_FLAGS) 
+endif
+
+ifdef CONFIG_CWMP_TR069
+DEPEND_FILES += fmtr069.o
+CFLAGS += -DCONFIG_CWMP_TR069
+endif
+
+ifdef CONFIG_RTK_VOIP_IP_PHONE
+LDFLAGS += -lpthread
+else
+
+ifdef CONFIG_CWMP_TR069
+LDFLAGS += -lpthread
+endif
+endif
+
+compile:
+ifdef VOIP_SUPPORT
+	make -C $(VOIP_APP)/web -f rtl8186.mak WEB_FLAGS='$(DEBUG) $(CFLAGS) $(IFLAGS)' WEB_DIR=$(PWD)/.. CC=gcc AR=ar
+endif
+	@make -f Makefile-x86 compile2
+
+#david
+compile2: $(NAME) flash
+
+#
+#	Build archive of objects
+#
+$(ARCH): $(DEPEND_FILES)
+	$(AR) $(ARFLAGS) $(ARCH) $?
+
+#
+#	Primary link
+#
+$(NAME): Makefile $(ARCH) $(MATRIXSSL)
+	$(CC) -o $(NAME) $(DEBUG) \
+		$(CFLAGS) $(IFLAGS) \
+		main.o $(VOIP_WEB) $(ARCH) $(LDFLAGS) 
+
+#david -------------------------------------------
+flash: Makefile flash.o apmib_flash.o mibtbl.o $(VOIP_FILES)
+	$(CC) -o flash $(DEBUG) \
+		$(CFLAGS) $(IFLAGS) \
+		flash.o apmib_flash.o mibtbl.o $(VOIP_FILES) $(LDFLAGS)
+##-------------------------------------------------
+
+#david
+clean:
+	rm -f $(NAME) flash  $(ARCH) $(DEPEND_FILES) $(VOIP_WEB) *.o
+# =========================================================
+# VoIP added by Rock
+# =========================================================
+ifdef VOIP_SUPPORT
+	make -C $(VOIP_APP)/web -f rtl8186.mak clean WEB_DIR=$(PWD)/.. CC=gcc AR=ar
+endif
+
+#
+#	Dependencies
+#
+../asp.o:  ../webs.h ../wsIntrn.h ../ej.h ../ejIntrn.h ../uemf.h
+
+../balloc.o: ../balloc.c ../uemf.h
+
+../base64.o:  ../base64.c ../webs.h ../wsIntrn.h  ../ej.h ../ejIntrn.h ../uemf.h
+
+../cgi.o:  ../webs.h ../wsIntrn.h ../uemf.h
+
+../default.o:  ../default.c ../webs.h ../wsIntrn.h ../ej.h ../ejIntrn.h ../uemf.h
+
+../ejlex.o:  ../ejlex.c ../ej.h ../ejIntrn.h ../uemf.h
+
+../ejparse.o:  ../ejparse.c ../ej.h ../ejIntrn.h ../uemf.h
+
+../emfdb.o:  ../emfdb.h ../wsIntrn.h ../uemf.h
+
+../form.o:  ../form.c ../webs.h ../wsIntrn.h ../ej.h ../ejIntrn.h ../uemf.h
+
+../h.o:  ../h.c ../uemf.h
+
+../handler.o:  ../handler.c ../webs.h ../wsIntrn.h ../ej.h ../ejIntrn.h ../uemf.h
+
+../md5c.o:  ../md5.h ../wsIntrn.h ../uemf.h
+
+../mime.o:  ../mime.c ../webs.h ../wsIntrn.h ../ej.h ../ejIntrn.h ../uemf.h
+
+../misc.o:  ../misc.c ../uemf.h
+
+../page.o:  ../page.c ../webs.h ../wsIntrn.h ../ej.h ../ejIntrn.h ../uemf.h
+
+../ringq.o:  ../ringq.c ../uemf.h
+
+../rom.o:  ../rom.c ../webs.h ../wsIntrn.h ../ej.h ../ejIntrn.h ../uemf.h
+
+../security.o:  ../security.c ../webs.h ../wsIntrn.h ../ej.h ../ejIntrn.h ../uemf.h
+
+../sock.o:  ../sock.c ../uemf.h
+
+../sockGen.o:  ../sockGen.c ../uemf.h
+
+../sym.o:  ../sym.c ../uemf.h
+
+../uemf.o:  ../uemf.c ../uemf.h
+
+../um.o:  ../webs.h ../wsIntrn.h ../um.h ../uemf.h
+
+../umui.o:  ../webs.h ../wsIntrn.h ../um.h ../uemf.h
+
+../url.o:  ../url.c ../webs.h ../wsIntrn.h ../ej.h ../ejIntrn.h ../uemf.h
+
+../value.o:  ../value.c ../uemf.h
+
+../webrom.o:  ../webrom.c ../webs.h ../wsIntrn.h ../uemf.h
+
+../webs.o:  ../webs.c ../webs.h ../wsIntrn.h ../ej.h ../ejIntrn.h ../uemf.h
+
+../websda.o:  ../webs.h ../wsIntrn.h ../websda.h ../uemf.h
+
+../websuemf.o:  ../websuemf.c ../webs.h ../wsIntrn.h ../ej.h ../ejIntrn.h ../uemf.h
+
+../websSSL.o:  ../websSSL.c ../websSSL.h ../wsIntrn.h ../ej.h ../ejIntrn.h ../uemf.h
+
+main.o:  main.c ../wsIntrn.h ../webs.h ../ej.h ../ejIntrn.h ../uemf.h
+
+apmib.o: apmib.c
+
+fmtcpip.o: fmtcpip.c
+
+utility.o: utility.c
+
+mibtbl.o: mibtbl.c
+
+flash.o: flash.c
+
+fmfwall.o: fmfwall.c
+
+fmget.o: fmget.c
+
+fmwlan.o: fmwlan.c
+
+fmmgmt.o: fmmgmt.c
+
+fmvpn.o: fmvpn.c
+
+version.o: version.c
+
+
+apmib_flash.o: apmib.c
+	cc -c -o $@ $(DEBUG) $(GWSUPP) $(WLANSUPP)  $(ROUTE) $(VOIP_FLAGS) $<
+
+$(MATRIXSSL):
+	make -C ../matrixssl/src -f Makefile-x86
+
+#
+#	Transition rules (add -o to put object in right directory)
+#
+.c.o:
+	cc -c -o $@ $(DEBUG) $(CFLAGS) $(IFLAGS) $<
+
+# =========================================================
+# added by Rock
+# =========================================================
+voip_flash.o: $(VOIP_APP)/flash/voip_flash.c $(VOIP_APP)/includes/voip_flash.h
+	cc -c -o $@ $(DEBUG) $(CFLAGS) $(IFLAGS) $<
+
+voip_flash_mib.o: $(VOIP_APP)/flash/voip_flash_mib.c $(VOIP_APP)/includes/voip_flash_mib.h
+	cc -c -o $@ $(DEBUG) $(CFLAGS) $(IFLAGS) $<
+
+voip_flash_tool.o: $(VOIP_APP)/flash/voip_flash_tool.c $(VOIP_APP)/includes/voip_flash_tool.h
+	cc -c -o $@ $(DEBUG) $(CFLAGS) $(IFLAGS) $<
+
+voip_flash_server.o: $(VOIP_APP)/flash/voip_flash_server.c $(VOIP_APP)/includes/voip_flash.h
+	cc -c -o $@ $(DEBUG) $(CFLAGS) $(IFLAGS) $<
+

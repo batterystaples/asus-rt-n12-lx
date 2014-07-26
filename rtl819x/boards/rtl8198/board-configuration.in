@@ -1,0 +1,14 @@
+
+comment "rtl8198"
+choice
+prompt "Selected Board Configuration"
+default MODEL_RTL8198_SPI_SQUASHFS
+config MODEL_RTL8198_SPI_SQUASHFS
+        bool "SPI flash + Squashfs"
+config MODEL_RTL8198_AP_SPI_SQUASHFS
+	bool "AP - SPI flash, Squashfs"
+config MODEL_RTL8198_MP
+        bool "MP"
+endchoice
+
+

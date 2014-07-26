@@ -1,0 +1,4136 @@
+Change History
+==============
+
+- 2011/05/06, button, feature refine
+
+* DIGEST:
+- bandwidth switch for interference test
+
+* TEST METHOD:
+- [1] DUT (8196c + 8192c AP) channel 11, 40 MHz
+- [2] Intel 5300, 20 MHz, connects to [1]
+- [3] Broadcom 11n AP: BGN, channel 6, 20 MHz
+- [4] Broadcom BG NIC connects to [3]
+- [1] [2] run chariot high performance script, 1D1U throughput 85~90 Mbps.
+- [4] Send UDP multicast packet by "WSend" .throughput of [1][2] downgrade 
+- to 30~40 Mbps
+
+* ROOT CAUSE:
+- 
+
+* MODIFIED FILES:
+- N/A
+
+* DESCRIPTION
+- add an flag "BANDWIDTH_SWITCH" in 8192cd_cfg.h.
+- if Initial gain = upper bound, and false alarm > threshold2*3, and there's 
+- no 40 MHz client, then switch BW to 20 MHz, and update ht capability in
+- beacon. When there's no any client connect to AP, and mib value is 40 MHz, then
+- switch  BW back to 40 MHz. (refer to Mantis 0000381)
+- 
+----------------------------------------------------------------------------------
+
+- 2011/05/03, chuangsw, feature refine
+
+* DIGEST:
+- update 92c firmware version from 51.0 to 69.0.
+- This version can support 63 clients.
+
+* TEST METHOD:
+- AP use the new firmware to run up the channel emulator, client is Intel 6300
+- chariot : DL, 20M,
+- the throughput is better than original firmware at the attenuation 76~80 dB.
+
+* ROOT CAUSE:
+- N/A
+
+* MODIFIED FILES:
+- N/A
+
+* DESCRIPTION
+- New firmware use new rate adaptive algorithm and it seems better.
+----------------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2011/05/03, victorlo, bug fix
+
+* DIGEST:
+- Refine tx power control method to avoid damaging (high power) PA
+
+* TEST METHOD:
+- High power AP with smaller odd power index in one or both
+  RF Path A and B, in power index for MCS8 to MCS15,
+  less than 0x10.
+- Use an 11n station connects the AP in middle range, ping long
+  packet success
+- Move station to the AP, let AP enters tx power control mode to
+  degrade tx power for the station
+- One or both external PA would be damaged shortly.
+
+* ROOT CAUSE:
+- When AP detected connected station in a short range by rssi,
+  driver will dynamically modify tx desc by an negative power
+  index for degrading tx power.
+- Since signin power index have to be an even number,
+  driver masks the last bit of power index after 2's compliment.
+- By using the mask of last bit, will mistakenly changed the
+  degraging power index to decrease more, and overflow the final
+  power index as a very large positive one and damage the PA.
+
+* MODIFIED FILES:
+- 8192cd_tx.c     - revision: 6135
+
+* DESCRIPTION:
+- driver masks the power index by the last bit before 2's compliment
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2011/05/03, button, feature refine
+
+* DIGEST:
+- refine wlan init, stop flow by filen
+
+* TEST METHOD:
+- run reboot, reinit script by tera term macro.
+- recover wlan after exceptions happened, such as watch dog reset, core dump, 
+- access null pointer, divided by zero. 
+
+* ROOT CAUSE:
+- 
+
+* MODIFIED FILES:
+- 8192cd_hw.c		- revision: 6121
+- 8192cd_headers.h	- revision: 6121
+- 8192cd_osdep.c	- revision: 6121
+
+* DESCRIPTION:
+- SD9 found 92c init fail in reboot long run test.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2011/05/03, button, new feature
+
+* DIGEST:
+- UMC B-cut 88c(6195B) support
+
+* TEST METHOD:
+
+* ROOT CAUSE:
+
+* MODIFIED FILES:
+
+- 8192cd.osdep.c    - revision: 6117
+- 8192cd_proc.c     - revision: 6117
+- 8192cd_hw.c       - revision: 6117
+- 8192cd_util.h     - revision: 6117
+- 8192cd_headers.h  - revision: 6117
+
+* DESCRIPTION
+- modify radio parameters, IQK, power mode
+
+------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2011/05/03, button, feature refine
+
+* DIGEST:
+- refine for antenna diversity
+
+* TEST METHOD:
+- run chariot with DWA-160 A2, DL, 6 pairs.
+
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:
+- 8192cd_hw.c           - revision: 6117
+
+* DESCRIPTION:
+- do not clear clear tx short-cut every sec. just update it.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2011/05/03, button, bug fix
+
+* DIGEST:
+- avoid overflow of mod64 calculation
+
+* TEST METHOD:
+- 
+
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:
+- 8192cd_sme.c           - revision: 6117
+
+* DESCRIPTION:
+- maximum of divisor= 2^20, maximum of residue= (2^20)-1, 12 bit left shift 
+- will never overflow.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2011/05/03, jerryko, feature refine
+
+* DIGEST:
+- missing release cache pstat pointer when fix MIC error
+
+* TEST METHOD:
+- when use 92D DMDP, the cache hwaddr still exist after clients disassociate.
+
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:
+- 8192cd_util.c     - revision: 6113
+- 8192cd.h          - revision: 6113
+- wapiCrypto.c      - revision: 6113
+- wapi_wai.c        - revision: 6113
+
+* DESCRIPTION:
+- in release_stainfo function, missing clean stainfo_cache pointer.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2011/05/02, jerryko, bug fix
+
+* DIGEST:
+- MIC error happen
+
+* TEST METHOD:
+- Use customer board and config 11g mode and wpa-pak with tkip.
+- Use two wifi clients to connect the AP and use chariot 1 DL+1 UL
+  each wifi clients. And mic error happen randomly.
+
+* ROOT CAUSE:
+- When driver found mic error packets, print packets information
+  da/sa/len/tid/key. And found the unicast key use wrong key.
+- In tkip_rx_mic function, get_stainfo get wrong pstat.
+  get_stainfo function memcmp (cache hwaddr)=hwaddr, but cache pstat is other
+  client pointer.
+
+* MODIFIED FILES:
+- 8192cd_util.c     - revision: 6092
+
+* DESCRIPTION:
+- 1.don't memcpy cache hwaddr, just save cache pstat pointer.
+- 2.memcmp compare (cache hwaddr pointer) with hwaddr.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2011/04/19, chuangsw, feature refine
+
+* DIGEST:
+- 98+ 92c/92d DL performance issue
+
+* TEST METHOD:
+- 1. build svn trunk image (r5944)
+- 2. run chariot from AP to client (Intel 6300)
+- 3. DL performance will be 140~160, avg 145 Mbps.
+
+* ROOT CAUSE:
+- 1. "highTP_found_pstat" will be reset in rtl8192cd_expire_timer() every
+     second but the highTP_found_pstat is choosen every two seconds.
+- 2. In choose_IOT_main_sta(), tx_2s_avg and rx_2s_avg may be overflow
+     so it will not found the highTP_found_pstat.
+
+* MODIFIED FILES:
+- revision: 5963
+- 8192cd_sme.c
+- 8192cd_util.c
+
+* DESCRIPTION:
+- 1. reset highTP_found_pstat every two seconds.
+- 2. avoid tx_2s_avg/rx_2s_avg overflow.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2011/04/13, victorlo, refine
+
+* DIGEST:
+- Refine ADDBA action frames and status handling
+
+* TEST METHOD:
+-
+
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES: revision 5898
+- 8192cd.h
+- 8192cd_sme.c
+- 8192cd_tx.c
+
+* DESCRIPTION
+-
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2011/04/01, chrisyeh, feature add
+
+* DIGEST:
+- Add band edge Tx power check for 8192d
+
+* TEST METHOD:
+- use MP tool to verify if the power-by-rate strategy is limited by band edge power.
+
+* ROOT CAUSE:
+- N/A
+
+* MODIFIED FILES:
+  revision : 5746
+- 8192cd_headers.h
+- 8192cd_ioctl.c
+- 8192cd_mp.c
+- 8192cd_cfg.h
+- 8192cd.h
+- 8192cd_util.c
+- 8192cd_hw.c
+- data_92d/TXPWR_LMT.txt  (Add)
+- 8192cd_hw.h
+- 8192cd_proc.c
+- ieee802_mib.h
+
+* DESCRIPTION:
+1. Must set a target_pwr for MP target, default: 13dBm
+2. Driver will check TXPWR_LMT.txt according to the current channel. Then, 
+   it caculates the difference between txpwr_lmt & target_pwr.
+3. Power-by-rate index is bound by the difference.
+
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2011/03/31, chrisyeh, bug fix
+
+* DIGEST:
+- fix 92d DMDP: ONLY wlan1 open alone
+
+* TEST METHOD:
+- DMDP mode, wlan0 & wlan1 down. Then, wlan0 up, it will load firmware fail.
+
+* ROOT CAUSE:
+- Typo causes wlan1 always cannot load fw.
+
+* MODIFIED FILES:
+  revision : 5730
+- 8192d_hw.c
+
+* DESCRIPTION:
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2011/03/31, chuangsw, bug fix
+
+* DIGEST:
+- fix wifi logo client mode MIC error test fail
+
+* TEST METHOD:
+- DUT : AP in client mode
+- use an AP to send MIC error packet to DUT, DUT should response a MIC Failure
+  Report but not.
+
+* ROOT CAUSE:
+- Client will not send MIC Failure Report if it receive a MIC error packet
+  from AP's ethernet addr, we should get the AP's addr by BSSID but not sa.
+
+* MODIFIED FILES:
+  revision : 5707
+- 8192cd_psk.h       
+- 8192cd_psk.c       
+- 8192cd_security.c       
+
+* DESCRIPTION:
+
+-----------------------------------------------------------------------------
+
+
+* DATE/WHOM/TYPE:
+- 2011/03/25, jerryko, bug fix
+
+* DIGEST:
+- fix beacon err too many in 8198+92c platform
+
+* TEST METHOD:
+- open environment, cat "/proc/wlan0/stats" display beacon err is almost the
+  same as beacon ok
+
+* ROOT CAUSE:
+- In 8198 platform, mac EIFS register (0x642) use 0x4000 value.
+  It means when hw recv crc error, then it stops tx 16ms(0x4000). The time is
+  too long and will effect beacon tx. So use default value(0x13A) and the value is
+  the same as 8196c+92c platform.
+
+* MODIFIED FILES:
+- 8192cd_hw.c -      revision:  5606
+
+* DESCRIPTION:
+- After using 0x13A, the beacon err decrease a lot.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2011/03/23, chuangsw, feature refine
+
+* DIGEST:
+- AP mode wifi logo fail 4.2.43-T05 
+
+* TEST METHOD:
+- Use 2T STA to connect to our AP  
+- AP ping STA (ping <STA> -n 100 -l 1000)
+- Check if the PING-REQ at data rate thar >= MCS 13
+
+* ROOT CAUSE:
+- The init RA register is set to MCS7, and it will update to more than MCS7
+  untill it receives heavy data flow.
+
+* MODIFIED FILES:
+  revision: 5558
+- 8192cd.h
+- 8192cd_sme.c
+- 8192cd_util.c
+
+* DESCRIPTION:
+- We will the the init rate to MCS15 if the STA is 2T and RSSI > 55
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2011/03/22, chuangsw, buf fix
+
+* DIGEST:
+- Client mode wifi logo test fail (MIC error)- 5.2.17 
+
+* TEST METHOD:
+- 1. Use our AP (e.g. 96+92d) to send MIC error packet through iwpriv command.
+- 2. When client receive a MIC error packet, it should response a MIC Failure
+     Report.
+- 3. If client receive two MIC error packets in 60 second, it should disassoc
+     with AP and it could not assoc with the AP again in 60 second.
+
+* ROOT CAUSE:
+- We send incorrect MIC Failure Report.
+
+* MODIFIED FILES:
+revision: 5519
+- 8192cd.h
+- 8192cd_headers.h
+- 8192cd_ioctl.c
+- 8192cd_psk.c
+- 8192cd_psk.h
+- 8192cd_security.c
+- 8192cd_sme.c
+
+* DESCRIPTION:
+- Client should send MIC Failure Report (EAPOL-key format with ERROR bit and
+  Request bit to be set 1) to AP when it receive a MIC error packet.
+- If client receive two MIC error packets in 60 second, it should disassoc
+  with AP by itself.
+
+-----------------------------------------------------------------------------
+* DATE/WHOM/TYPE:
+- 2011/03/21, chris, sync branch
+
+* DIGEST:
+- sync with cameo released branch
+  1) range issue (tx power by rate)
+  2) DFS slave mode
+
+* TEST METHOD:
+-
+
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:
+revision: 5455
+- 8192cd.h
+- 8192cd_cfg.h
+- 8192cd_headers.h
+- 8192cd_hw.c
+- 8192cd_hw.h
+- 8192cd_ioctl.c
+- 8192cd_mp.c
+- 8192cd_osdep.c
+- 8192cd_proc.c
+- 8192cd_rx.c
+- 8192cd_sme.c
+- 8192cd_tx.c
+- 8192cd_util.c
+- 8192d_hw.c
+- 8192d_reg.h
+- Kconfig
+- rename data/PHY_REG_MP_n.txt -> data/PHY_REG_MP_n_92C.txt
+- rename data/PHY_REG_PG.txt -> data/PHY_REG_PG_92C.txt
+
+* DESCRIPTION:
+-
+
+-----------------------------------------------------------------------------
+* DATE/WHOM/TYPE:
+- 2011/03/14, victorlo, add feature
+
+* DIGEST:
+- Periodically update TXOP from Beacon for Wifi 11n Client mode test
+
+* TEST METHOD:
+-
+
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:
+- 8192cd_sme.c - revision: 5326
+
+* DESCRIPTION:
+-
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2011/03/13, victorlo, refine
+
+* DIGEST:
+- Refine Client mode EDCA setting flow when ACM bit is set by AP
+
+* TEST METHOD:
+-
+
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:
+- 8192cd_sme.c - revision: 5291
+
+* DESCRIPTION:
+-
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2011/03/13, victorlo, refine
+
+* DIGEST:
+- Refine IOT mode checking for Wifi 11n Client logo test
+
+* TEST METHOD:
+-
+
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:
+- 8192cd_hw.c - revision: 5289
+- 8192cd_util.c - revision: 5289
+
+* DESCRIPTION:
+-
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2011/03/13, victorlo, add feature
+
+* DIGEST:
+- Support Client mode 11n protection mode
+
+* TEST METHOD:
+-
+
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:
+- 8192cd.h - revision: 5286
+- 8192cd_sme.c - revision: 5286
+- 8192cd_tx.c - revision: 5286
+
+* DESCRIPTION:
+-
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2011/03/13, victorlo, add feature
+
+* DIGEST:
+- Support Wifi 11n Client logo 20/40 Coexist detection
+
+* TEST METHOD:
+-
+
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:
+- 8192cd.h - revision: 5284
+- 8192cd_proc.c - revision: 5284
+- 8192cd_sme.c - revision: 5284
+- 8192cd_tx.c - revision: 5284
+- 8192cd_util.c - revision: 5284
+
+* DESCRIPTION:
+- 
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2011/03/11 , chuangsw, bug fix
+
+* DIGEST:
+- wifi logo 5.2.17 fail 
+
+* TEST METHOD:
+- Config 96+92d AP to client mode and use another AP to a MIC error packet
+- If client receive two MIC error packets in 60 sec, AP will disassoc it,
+- When the AP sends two MIC error packets in 60 sec to our client mode, it
+  does not disassoc.
+
+* ROOT CAUSE:
+- we don't send MIC error report to AP when we receive MIC error packet.  
+
+* MODIFIED FILES:
+    - 8192cd_headers.h       - revision: 5272
+    - 8192cd_ioctl.c         - revision: 5272
+    - 8192cd_psk.c           - revision: 5272
+    - 8192cd_security.c      - revision: 5272
+    - 8192cd_sme.c           - revision: 5272
+
+* DESCRIPTION
+- send MIC error report when we (client mode) receive MIC error packet. 
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2011/02/09 , chuangsw, feature refine
+
+* DIGEST:
+- avoid power index too small
+
+* TEST METHOD:
+- when we use the mp tool set the power index to 1, it will burn the pa.
+
+* ROOT CAUSE:
+- all power index will be reduced 16, so if the power index is 1 or some small
+  values, it will be very big after reduced 16 (negative number is trancformed
+		into unsigned int).
+
+* MODIFIED FILES:
+    - 8192cd.h              - revision: 4862
+    - 8192cd_hw.c           - revision: 4862
+    - 8192cd_tx.c           - revision: 4862
+
+* DESCRIPTION
+- 1. choose the minimum power index (min_pwr_idex)
+- 2. if (min_pwr_idex < 16)
+	the power index will be reduced "min_pwr_idex"
+     else
+	the power index will be reduced 16
+
+-----------------------------------------------------------------------------
+
+
+* DATE/WHOM/TYPE:
+- 2011/02/09 , button, bug fix
+
+* DIGEST:
+- fix bug of leave sta detect
+
+* TEST METHOD:
+- Netgear BT test 
+
+* ROOT CAUSE:
+- once a sta connected to vap fall into in leave state, will never change 
+- to normal state.
+
+* MODIFIED FILES:
+- 8192cd_rx.c       - revision: 4851
+
+* DESCRIPTION
+- when receving packet from leaving sta, change state to normal in
+- rx_shortcut, process_datafrme, rtl8192cd_rx_procNullPkt.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2011/01/26 , button, bug fix
+
+* DIGEST:
+- avoid external PA burn out
+
+* TEST METHOD:
+
+* ROOT CAUSE:
+
+* MODIFIED FILES:
+- 8192cd_hw.c      - revision:  4808
+
+* DESCRIPTION
+- disable adding extra power by rate of high power boards
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2011/01/19, jerryko, feature refine
+
+* DIGEST:
+- add define SW_TX_QUEUE to improve performance when multiple clients
+
+* TEST METHOD:
+- veri-wave test 31 clients to measure performance
+
+* ROOT CAUSE:
+- N/A
+
+* MODIFIED FILES:
+- 8192cd.h              -revision: 4747
+- 8192cd_cfg.h          -revision: 4747
+- 8192cd_ioctl.c        -revision: 4747
+- 8192cd_proc.c         -revision: 4747
+- 8192cd_sme.c          -revision: 4747
+- 8192cd_util.c         -revision: 4747
+- 8192cd_tx.c           -revision: 4747
+
+* DESCRIPTION
+- When driver detect transmit DA mac or tid switch times over
+  high_threshold, sw queue will enable and start to queue incoming packets.
+  When queue packets over limit or timeout, driver will send all packets in
+  queue. When driver detect transmit DA mac or tid switch times lower than
+  low_threshold , sw queue will disable and dequeue all packets in queue.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2011/01/13, davidhsu, bug fix
+
+* DIGEST:
+- Fix 92d diver hang up issue when receiving fragment packets but not AMSDU
+
+* TEST METHOD:
+- Config 96c/98 + 92d only, enable 1x1 dualband concurrent
+- Let a DWA-130 client to connect to AP in 2.4G band (This client will send
+  packet in AMSDU)
+- Let a 5G client connect to AP in 5G band
+- Run BT in these two clients
+- AP will hang up (console hang) after running a preiod time 
+
+* ROOT CAUSE:
+-  5G mac will report fragment packets but not in AMSDU. Thus, it will cause
+   driver looply in parsing Rx packet.
+
+* MODIFIED FILES:
+- 8192cd_rx.c		revision: 4665
+
+* DESCRIPTION
+- Discard fragment packets if it is not AMSDU
+
+----------------------------------------------------------------------------- 
+
+* DATE/WHOM/TYPE:
+- 2011/1/10, chrisyeh, bug fix
+
+* DIGEST:
+- No full-band SS for AP auto-channel
+
+* TEST METHOD:
+- Select auto-channel and see if the channel is at the right band.
+
+* ROOT CAUSE:
+- Do full-band SS for Client, AP Site survey, but no auto-channel.
+
+* MODIFIED FILES:
+- 8192cd_sme.c           -revision: 4622
+
+* DESCRIPTION
+- Switch to full-band if auto_channel != 1 (that means not AP auto-channel)
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2011/1/10, chrisyeh, bug fix
+
+* DIGEST:
+- handle sleep mode management frame
+- fine tune dynamic noise control
+
+* TEST METHOD:
+- Broadcom client cannot aggregate packet when running chariot
+
+* ROOT CAUSE:
+- Broadcom client send ADDBAReq when sleeping
+
+* MODIFIED FILES:
+- 8192cd_cfg.h           -revision: 4622
+- 8192cd_headers.h       -revision: 4622
+- 8192cd_hw.c            -revision: 4622
+- 8192cd_sme.c           -revision: 4622
+- 8192cd_osdep.c         -revision: 4622
+- 8192cd_tx.c            -revision: 4622
+
+* DESCRIPTION
+- We queue management frames if client is sleeping
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2011/01/10, button, feature refine
+
+* DIGEST:
+- update for high power board
+
+* TEST METHOD:
+- test in spectrum analyzer by Anchi
+
+* ROOT CAUSE:
+- 
+
+* MODIFIED FILES:
+- 8192cd_osdep.c		revision: 4592
+
+* DESCRIPTION
+- modify PCIe clock from 100M to 102M to reduce harmonic in 2.4G high channel 
+- in order conform to FCC standard
+
+----------------------------------------------------------------------------- 
+* DATE/WHOM/TYPE:
+- 2011/01/07, victorlo, bug fix
+
+* DIGEST:
+- Refine RSC signin of EAPOL 4-3 and 2-1 packet with a correct PN value
+
+* TEST METHOD:
+- Set Enc mode as WPA2/AES.
+- Use Broadcom station (e.g. iphone) associates AP, DHCP and ARP req
+  from ethernet success. Ping success from ethernet.
+- After client associated, generate lots of broadcast packets from AP
+  (e.g. ARP attack)
+- Stop broadcast packets when "dot11EncryptKey.dot11TXPN48.val48"
+  greater than 0xffff, which is displayed in proc/wlan0/mib_gkeytbl
+- Reconnect Broadcom station again, DHCP and ARP req fail. Ping fails
+
+* ROOT CAUSE:
+- Wrong PN value of group key has been mistakenly signed in EAPOL 4 way
+  (or 2 way) handshake when greater than 0xffff, cause associating
+  station accepted a wrong unreasonable large PN value as the initial
+  sequence number of broadcast packet from AP.
+- After 4 way (or 2 way) handshake, broadcast packet with correct PN
+  received by client will be dropped.
+
+* MODIFIED FILES:
+- 8192cd_psk.c - revision:4580
+
+* DESCRIPTION
+- Endian issue of signin packet value by memcpy, 
+  refine RSC signin of EAPOL 4-3 and 2-1 packet with a correct PN value
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2011/1/7, chrisyeh, bug fix
+
+* DIGEST:
+- fix 92D load firmware fail & reinit fail
+
+* TEST METHOD:
+- Long run test of reinit. 
+
+* ROOT CAUSE:
+- Move Load_92D_Firmware later than PHY init
+- Remove MAC I/O off before Firmware Self-reset
+
+* MODIFIED FILES:
+- 8192cd_hw.c           -revision: 4560
+- 8192cd_osdep.c        -revision: 4560
+- 8192d_hw.c            -revision: 4560
+
+* DESCRIPTION
+- 
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2011/1/5, chuangsw, bug fix
+
+* DIGEST:
+- fix wifi logo problem (4.2.4 & 4.2.21-T06) 
+
+* TEST METHOD:
+- 4.2.4 : we can duplicate the problem by ping big packet. 
+	ex: ping xxx -l 1500
+
+- 4.2.21-T06 : setup as the wifi logo test discription.
+	       we can duplicate it by turning on the aggregation of
+	       the AP when doing the WMM chariot test. 
+
+* ROOT CAUSE:
+- 4.2.4 : the MAX_SKB_BUF(2256) is not enough, so it will be drop
+          in reassemble() (at 8192cd_rx.c).
+	  error message:
+	  "RX DROP: over rx buf size after reassemble".
+
+- 4.2.21-T06 : the root cause is not found
+
+* MODIFIED FILES:
+- 8192cd_cfg.h           -revision: 4545
+- 8192cd_tx.c		 -revision: 4545
+
+* DESCRIPTION
+- 8192cd_cfg.h : Ajust the "MAX_SKB_BUF" size 2256 to 2260.
+- 8192cd_tx.c : delete the is_intel_sta cheching before set_desc(TX_AggEn)
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2011/1/3, button, bug fix
+
+* DIGEST:
+- fix 88c won't do IQK
+
+* TEST METHOD:
+- 
+
+* ROOT CAUSE:
+- code merge error
+
+* MODIFIED FILES:
+- 8192cd_hw.c           -revision: 4520,4521
+
+* DESCRIPTION
+- fix 88c won't do IQK and update IQK version
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/12/29, button, bug fix
+
+* DIGEST:
+- fix 92d tx EVM issue(drop 5 dB)
+
+* TEST METHOD:
+- build 92c + 92d nfjrom, test in IQ-view
+
+* ROOT CAUSE:
+- 92d power depends on 92c circuit in v630 board
+
+* MODIFIED FILES:
+- 8192cd_hw.c           -revision: 4481
+
+* DESCRIPTION
+- 92c power always in PWM mode
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/12/17, button, bug fix
+
+* DIGEST:
+- console hang after long run sw re-init
+
+* TEST METHOD:
+	
+* ROOT CAUSE:
+- CPU continues receive GPIO interrupt, because IRQ status is not zero.
+
+* MODIFIED FILES:
+- 8192cd.h		-revision: 4322
+- 8192cd_hw.c 		-revision: 4322
+- 8192cd_headers.h	-revision: 4322
+	
+* DESCRIPTION
+- request before WLAN open, ensure all IRQ is processed.
+  
+-----------------------------------------------------------------------------  
+
+* DATE/WHOM/TYPE:
+- 2010/12/13, button, bug fix
+
+* DIGEST:
+- Atheros, Broadcom can't back to OFDM rate once it dropped to
+- CCK rate in range testing.
+
+* TEST METHOD:
+- use attenuator to emulate long range test, let client tx rate dtop to CCK by
+  setting 
+- attenuation 50dB, run chariot uplink 10 sec and set attenuation to 0dB, see
+  if client's 
+- rate go back to OFDM.
+
+* ROOT CAUSE:
+- Broadcom client is sensitive to CCK SIFS, we set it too large before.
+- Atheros rate adaptive mechanism may reference ACK rate, we mask
+- 5.5 11 Mbps ACK will let Atheros stay in CCK rate.
+
+* MODIFIED FILES:
+- 8192cd_hw.c  	  	- revision: 4270
+- data/MACPHY_REG.txt  	- revision: 4270
+
+* DESCRIPTION
+- adjust CCK SIFS with 10uS
+- enable all CCK rate for ACK frame.
+
+-----------------------------------------------------------------------------
+
+
+* DATE/WHOM/TYPE:
+- 2010/12/7, chris, bug fix 
+
+* DIGEST:
+- 92D DMDP wlan1 tx power MUST read path-B values
+
+* TEST METHOD:
+- N/A
+
+* ROOT CAUSE:
+- Because DMDP wlan1 use path-B to Tx/Rx, we should use path-B values.
+
+* MODIFIED FILES:
+- 8192cd_hw.c		- revision: 4216
+
+* DESCRIPTION
+- N/A
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/12/6, chris, bug fix 
+
+* DIGEST:
+- Enable firmware self reset function
+
+* TEST METHOD:
+- Soft reboot many times and see if firmware load fail.
+
+* ROOT CAUSE:
+- Firmware self reset function should be enabled.
+- Add: Mask IMR when firmware in reset
+
+* MODIFIED FILES:
+- 8192cd_hw.c									- revision: 4202
+
+* DESCRIPTION
+- N/A
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/12/3, chris, bug fix 
+
+* DIGEST:
+- FW: 8192D_FW_v10.2_1202_3(with header), fix intel IOT
+
+* TEST METHOD:
+- Intel client will use low rate (<=MCS1) tx to DUT
+
+* ROOT CAUSE:
+- Firmware has some timing issue, not clearified yet.
+
+* MODIFIED FILES:
+- data_92d/rtl8192dfw_n.bin - rev. 4184
+
+* DESCRIPTION
+- N/A
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/11/29, jason, bug fix 
+
+* DIGEST:
+- Modified AP RX performance penalty for dual card 92D+92C in the rtl8198 platform.
+
+* TEST METHOD:
+- Use rtl8198 DUT and build dual card 92D+92C support to test performance.
+
+* ROOT CAUSE:
+- When enabling RX_GATER, the AP RX performance of the 92D is lower than 100Mbps in dual card platform (92D+92C). So roll back to the disable RX_GATER.
+
+* MODIFIED FILES:
+- 8192cd_cfg.h								- revision: 4138
+- 8192cd_util.c								- revision: 4138
+
+* DESCRIPTION
+- Roll back to dsiable RX_GATER and modified the MAX_SKB_NUM to improve the performance.
+- The bug is reported to the Mantis.
+
+-----------------------------------------------------------------------------
+* DATE/WHOM/TYPE:
+- 2010/11/26, chris, bug fix & feature add
+
+* DIGEST:
+- 92D firmware update 8192D_8051FW_V0012_release
+- fix wep/tkip RA fail
+- check 92D PN by firmware
+
+* TEST METHOD:
+- 
+
+* ROOT CAUSE:
+- N/A
+
+* MODIFIED FILES:
+- 8192cd.h										- revision: 4096
+- 8192cd_headers.h						- revision: 4096
+- 8192cd_hw.c									- revision: 4096
+- 8192cd_util.c								- revision: 4096
+- 8192d_hw.c									- revision: 4096
+- data_92d/rtl8192dfw_n.bin		- revision: 4096
+- data_92d/rtl8192dfw_smcc_n.bin	- removed!
+
+* DESCRIPTION
+- firmware 8192D_8051FW_V0012_release needs driver claim maximum used macid for
+	rate adaptive. Then using legacy rate for WEP/TKIP can be fixed.
+- 92D part number should be checked by firmware. If firmware loaded fail, driver
+	should not start.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/11/26, button, feature refine
+
+* DIGEST:
+- refine for high power demo boards
+
+* TEST METHOD:
+- 
+
+* ROOT CAUSE:
+- N/A
+
+* MODIFIED FILES:
+- 8192cd.h			revision:4086
+- 8192cd_headers.h		revision:4086
+- 8192cd_hw.c			revision:4086
+- 8192cd_ioctl.c		revision:4086
+- 8192cd_mp.c			revision:4086
+- data/PHY_REG_1T_n_hp.txt	revision:4087
+
+* DESCRIPTION
+- add phy parameters for 88RE high power demo board
+- add mib "hp_ofdm_max", "hp_cck_max" to limit maximum tx power in MP mode
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/11/24, jason, feature add
+
+* DIGEST:
+- "Fixed the PCIe bios code dump issue if existing 92D+92C.
+
+* TEST METHOD:
+- Put DUT side by side, see the dual wlan interface work normally.
+
+* ROOT CAUSE:
+- Null pointer access in the PCIe bios state if the private data does not exist.
+
+* MODIFIED FILES:
+- 8192cd_osdep.c	- revision: 4051
+
+* DESCRIPTION
+- The pointer is not initalization before the private data is not allocation.
+- The private data is dynamically allocated in the PCIe bios state.
+
+-----------------------------------------------------------------------------
+* DATE/WHOM/TYPE:
+- 2010/11/17, button, feature refine
+
+* DIGEST:
+- Support USB power
+
+* TEST METHOD:
+- 
+
+* ROOT CAUSE:
+- N/A
+
+* MODIFIED FILES:
+- 8192cd.h  	- revision: 3915
+- 8192cd_cfg.h 	- revision: 3915
+- 8192cd_hw.c 	- revision: 3919
+- 8192cd_util.c	- revision: 3919
+- Kconfig 	- revision: 3915
+
+* DESCRIPTION
+- Lower 2 spatial stream power index
+- Mask MCS12, MCS11 of sta tx map
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/11/15, chrisyeh, feature add
+
+* DIGEST:
+- 92D power tracking
+- 92D crystal cap function 
+- EFUSE MAP is also refined
+
+* TEST METHOD:
+- if there is thermal meter value, tx power index will change as the thermal value varies. 
+
+* ROOT CAUSE:
+- N/A
+
+* MODIFIED FILES:
+- 8192cd_headers.h  	- revision: 3835
+- 8192cd_hw.c  	- revision: 3835
+- 8192cd_hw.h  	- revision: 3835
+- 8192cd_ioctl.c  	- revision: 3835
+- 8192cd_mp.c  	- revision: 3835
+- 8192cd_osdep.c  	- revision: 3835
+- 8192cd_phyreg.h  	- revision: 3835
+- 8192cd_proc.c  	- revision: 3835
+- 8192cd_sme.c  	- revision: 3835
+- 8192d_hw.c  	- revision: 3835
+- 8192d_reg.h  	- revision: 3835
+- ieee802_mib.h  	- revision: 3835
+
+* DESCRIPTION
+- 92D power tracking related registers and procedures are different from 92C.
+- 92D crystal cap function
+- 92D efuse map length is double of 92C's.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/11/15, chrisyeh, bug fix
+
+* DIGEST:
+- use skb_copy for 92D broadcast packet MIC error
+
+* TEST METHOD:
+- Use WAP-WAP2-mixed encryption for dual band concurrent mode, then client will be disassociated due to MIC error.
+
+* ROOT CAUSE:
+- Orignally, broadcast packet is only cloned. It seems like the data is damaged.
+
+* MODIFIED FILES:
+- 8192cd_tx.c  	- revision: 3835
+- 8192cd_rx.c  	- revision: 3835
+
+* DESCRIPTION
+- In rx and tx processes, use skb_copy instead of skb_clone.
+
+-----------------------------------------------------------------------------
+* DATE/WHOM/TYPE:
+- 2010/11/11, button, feature refine
+
+* DIGEST:
+- ADD_TX_POWER_BY_CMD supports minus value
+
+* TEST METHOD:
+- set power plus value by iwpriv command for calibrated and uncalibrated 
+- demo boards, and check the difference of power index (reg e00, e04... )
+
+* ROOT CAUSE:
+- N/A
+
+* MODIFIED FILES:
+- 8192cd_hw.c  	- revision: 3764
+- 8192cd.h	- revision: 3764
+- 8192cd_hw.h	- revision: 3764
+- 8192cd_ioctl.c- revision: 3764
+
+* DESCRIPTION
+- use example: iwpriv wlan0 set_mib txPowerPlus_cck_1=-2
+- available range:-128 ~ +126, +127 use default PHY_REG_PG.txt
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/11/11, button, feature fine tune
+
+* DIGEST:
+- fine tune for high power demo board
+
+* TEST METHOD:
+- channel emulator test
+
+* ROOT CAUSE:
+- N/A
+
+* MODIFIED FILES:
+- 8192cd.h 	 - revision: 3276
+- 8192cd_headers.h - revision: 3276
+- 8192cd_hw.c	 - revision: 3276
+- 8192cd_hw.h	 - revision: 3276
+- 8192cd_osdep.c - revision: 3276
+- 8192cd_proc.c	 - revision: 3276
+- 8192cd_sme.c	 - revision: 3276
+- 8192cd_util.c	 - revision: 3276
+- data/PHY_REG_2T_n_hp.txt  - revision: 3276
+- data/PHY_REG_PG_hp.txt   - revision: 3276
+
+* DESCRIPTION
+- update phy parameter
+- modify rssi threshold of dynamic algorithm
+- add tx power control, disable beacon AGC
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/11/10, victorlo, feature refine
+
+* DIGEST:
+- Enhance Beacon tx
+
+* TEST METHOD:
+-
+
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:
+- 8192cd_hw.c  - revision: 3720
+
+* DESCRIPTION
+- By MAC register refine, to enlarge TBTT hold time and shorter the beacon
+  IFS time, to enhance beacon tx opportunity
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/11/10, davidhsu, bug fix
+
+* DIGEST:
+- Packet length is 0 when re-send wpa 4-ways message in client mode
+
+* TEST METHOD:
+- Config in client mode with PSK enabled.
+- It may have chance in failure of wpa 4-ways handshaking
+
+* ROOT CAUSE:
+- EAPOL packet length did not be recorded in 1st message
+
+* MODIFIED FILES:
+- 8192cd_psk.c - revision: 1.7
+
+* DESCRIPTION
+- Record the eapol packet length in 1st message
+
+----------------------------------------------------------------------------- 
+
+* DATE/WHOM/TYPE:
+- 2010/11/10, chris, bug fix
+
+* DIGEST:
+- For beacon Tx after each bcn_err happens
+
+* TEST METHOD:
+- In open space, sniffer beacon and should not see beacon interval larger than 200ms.
+
+* ROOT CAUSE:
+- Beacon can be blocked for a long time if CCA keeping happening.
+
+* MODIFIED FILES:
+- 8192cd_hw.c  - revision: 3685
+
+* DESCRIPTION
+- Enable MAC Force beacon function:
+- a) 0x524[13] = 1¡¦b1
+- b) 0x55d[7:0] set to a value not equal to 8¡¦hff, the number indicates that 92DE will 
+     TX bcn regardless of the channel once the BCN failed number is larger than the register setting.
+- c) 0x642[7:0] set the EIFS less than TBTT_PROHIBIT_TIME
+		 
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/11/09, button, bug fix
+
+* DIGEST:
+- Auto channel side band issue
+
+* TEST METHOD:
+- Configure 92d to 5G 2x2, bandwidth 40MHz, auto channel. 
+- check the channel number, and side band selected by our algorithm
+
+* ROOT CAUSE:
+- we consider 2.4G only in sideband selection.
+
+* MODIFIED FILES:
+- 8192cd_sme.c  - revision: 3681
+
+* DESCRIPTION
+- select channel and sideband follow the document
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/11/09, button, bug fix
+
+* DIGEST:
+- Tx rate error for legacy encryption STA
+
+* TEST METHOD:
+- Configure DUT to AES/TKIP mix mode, and set tx rate to MCS 15.
+- Let a wireless client connect to DUT in TKIP and ping DUT, 
+- sniffer the packets from DUT to STA.
+
+* ROOT CAUSE:
+- If user set fix tx rate, we just assign data rate in tx descriptor,
+- do not check the capability of target STA.
+
+* MODIFIED FILES:
+- 8192cd_sme.c  - revision: 3668
+- 8192cd_tx.c   - revision: 3668
+- 8192cd_util.h - revision: 3668
+
+* DESCRIPTION
+- If the rate set of STA do not contain the fixed tx rate assign by user, 
+- we use FW rate adaptive instead.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/11/04, Jason, bug fixed
+ 
+* DIGEST:
+- Fixed the rtl8192d rebooting issue about missing rtl8192d PCIe card.
+ 
+* TEST METHOD:
+- Build 98+AP package and make to fail in initialize AP MIB. Reboot the DUT and make sure the 92d PCIe existing. 
+ 
+* ROOT CAUSE:
+- The rtl8192d PHY can not link the PCIe root complex in the rtl8198 platform.
+
+* MODIFIED FILES:
+- 8192cd_osdep.c - revision: 3648. (svn) 
+  
+* DESCRIPTION
+- 1) Added the following sequence in stop hardware.
+     - Reset the Root Complex PHY and pReset.
+     - Initialize the MDIO reset.
+     
+-----------------------------------------------------------------------------
+* DATE/WHOM/TYPE:
+- 2010/11/04, Jason, new feature
+ 
+* DIGEST:
+- Added auto-recognition pcie card and bypass non-exist method in rtl8198 platform.
+
+ 
+* TEST METHOD:
+- Removed the 92D and run the image normally with 92C.
+- And both (92D+92C) run normally in the rtl8198 platform.
+ 
+* ROOT CAUSE:
+- The recognition of the PCIE does not have error exception handler.
+
+ 
+* MODIFIED FILES:
+- 8192cd_osdep.c - revision: 3588. (svn) 
+  
+* DESCRIPTION
+- 1) Check PCIE Link status and decide the wlan interface number.
+
+-----------------------------------------------------------------------------
+* DATE/WHOM/TYPE:
+- 2010/11/04, Jason, new feature
+ 
+* DIGEST:
+- 92C+92D Concurrent mode for dual PCIe cards in rtl8198 platform.
+
+ 
+* TEST METHOD:
+- Run each Single Mode chariot up to 160Mbps and Dual Mode chariot up to 26xMbps.
+
+ 
+* ROOT CAUSE:
+- 
+ 
+* MODIFIED FILES:
+- Kconfig - revision: 3565. (svn)
+- 8192cd_osdep.c - revision: 3565. (svn) 
+- 8192cd_hw.c - revision: 3565. (svn)  
+- 8192cd_cfg.h - revision: 3565. (svn) 
+- 8192cd_headers.h - revision: 3565. (svn) 
+- 8192cd_proc.c - revision: 3565. (svn)
+- Makefile - revision: 3565. (svn)
+- data/AGC_TAB_n_92C.txt  - revision: 3565. (NEW)      
+- data/MACPHY_REG_92C.txt - revision: 3565. (NEW)     
+ 
+* DESCRIPTION
+- 1) Added compile tag 'CONFIG_RTL_DUAL_PCIESLOT_BIWLAN_D' to support rtl8192c +rtl8192d dual card support in rtl8198 platform.
+- 2) Change data/AGC_TAB_n to data/MACPHY_REG.txt to data/AGC_TAB_n_92C to data/MACPHY_REG_92C.txt to avoid the same files name in data and data_92d directory.
+
+-----------------------------------------------------------------------------
+* DATE/WHOM/TYPE:
+- 2010/10/21, Chris, new feature & bug fix
+ 
+* DIGEST:
+- 92D Client mode full-band site survey.
+- 92D MP-Chip Smart concurrent.
+- 92D fine tune.
+ 
+* TEST METHOD:
+- Full-band Site Survey: Set AP to 2x2 Client mode, the site survey result will show both 5G and 2G APs.
+- Smart Concurrent: Build with "Smart concurrent support", if only one band is connected, the client uses 2T rates.
+	But clients on the other band can still discover the AP. When both bands are connected, the clients use 1T rates.
+- Update PHY parameters 92D_MPChip_PHYforMP_101013 and Synthersizer setting. Add FW for smart concurrent
+ 
+* ROOT CAUSE:
+- 
+ 
+* MODIFIED FILES:
+- Kconfig - revision: 3409 (svn)
+- 8192cd_osdep.c - revision: 3409 (svn) 
+- 8192c_reg.h - revision: 3409 (svn) 
+- 8192cd_hw.c - revision: 3409 (svn) 
+- 8192d_reg.h - revision: 3409 (svn) 
+- 8192cd_hw.h - revision: 3409 (svn) 
+- 8192cd_sme.c - revision: 3409 (svn) 
+- 8192cd_tx.c - revision: 3409 (svn) 
+- 8192cd_cfg.h - revision: 3409 (svn) 
+- 8192cd_ioctl.c - revision: 3409 (svn) 
+- 8192d_hw.c - revision: 3409 (svn) 
+- 8192cd_mp.c - revision: 3409 (svn) 
+- 8192cd_util.c - revision: 3409 (svn) 
+- 8192cd_headers.h - revision: 3409 (svn) 
+- 8192cd.h - revision: 3409 (svn) 
+- data_92d/radio_a_n.txt - revision: 3409 (svn) 
+- data_92d/radio_b_n.txt - revision: 3409 (svn) 
+- data_92d/rtl8192dfw_smcc_n.bin - revision: 3409 (svn) (NEW)
+
+ 
+* DESCRIPTION
+- 1)When starting site survey, set network type to A/B/G/N to get all channel map.
+		When doing site survey, function "clnt_ss_check_band()" checks channel and switches to
+		the respective PHY_BAND.
+- 2)Smart concurrent: open interface by 2x2_A0->1x1A0G1 then 1x1A0G1->2x2G1->1x1A0G1 to 
+		record IQK results and related reg values.
+-	3)For new PHY-parameters, 92D must load synthersizer setting before switching channel.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/10/15, ZhangJian, buf fix
+ 
+* DIGEST:
+- Refine for hostapd.
+ 
+* TEST METHOD:
+- Enable hostapd that is choosing "Realtek hostapd support" at kernel menuconfig
+  and selecting "openssl" & "hostapd in host controlled mode" at users menuconfig,
+  using 1) RTL8192su(winXP driver: 1084.36.708.2010, 2010-7-8), 
+	2) DWA140(winXP driver: 1.4.3.0, 2009-5-19), 
+	3) WN111(3.0.0.141, 2009-1-13),
+  test wpa2-psk, wps push button and wps pin OK.
+ 
+* ROOT CAUSE:
+- 1) If rsn ie differs between beacon (or probe rsp) and 3/4 msg of 4-Way Handshake,
+  wlan client will not send out 4/4 msg of 4-Way Handshake.
+ 
+* MODIFIED FILES:
+- 8192cd_net80211.c - revision: 3334 (svn)
+- 8192cd_osdep.c - revision: 3334 (svn)
+- 8192cd_psk_hapd.c - revision: 3334 (svn)
+- Kconfig - revision: 3334 (svn)
+ 
+* DESCRIPTION
+- 1) rsn ie constructed at wlan driver shoud be consistent with hostapd code 
+     such as wmm_enabled.
+  2) expired_time of /proc/wlan0/sta_info should be consistent with 
+     ap_max_inactivity at hostapd conf file.
+ 
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/09/15, EricYeh,  new feature
+
+* DIGEST:
+- Support requests(listed below) from TP-Link.
+  1. WiFi AP works without daemons 'auth' 'iapp' 'iwcontrol'
+  2. 802.1x Authentication (RADIUS) & IAPP are handled by 'Hostapd-0.5.9'
+  3. PSK is handled by 'WiFi Driver' itself.
+  4. WPS is handled by 'wscd'.
+
+* TEST METHOD:
+- Remove daemons 'auth' 'iapp' 'iwcontrol', run 'wsc daemon' and modified 
+  'Hostapd-0.5.9', verify related functions (Security, WPS, WDS, IAPP...)
+  can work well or not.
+  	
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:             
+- 8192cd.h - revision: 2973 (svn)                             
+- 8192cd_cfg.h - revision: 2973 (svn)                            
+- 8192cd_ioctl.c - revision: 2973 (svn)                
+- 8192cd_net80211.c - revision: 2973 (svn)          
+- 8192cd_osdep.c - revision: 2973 (svn)                            
+- 8192cd_psk.c - revision: 2973 (svn)            
+- 8192cd_psk.h - revision: 2973 (svn)                     
+- 8192cd_psk_hapd.c - revision: 2973 (svn)               
+- 8192cd_rx.c - revision: 2973 (svn)                      
+- 8192cd_security.c - revision: 2973 (svn)           
+- 8192cd_sme.c - revision: 2973 (svn)                         
+- 8192cd_util.c - revision: 2973 (svn)   
+
+* DESCRIPTION
+- Add compile tag 'HAPD_DRV_PSK_WPS' to figure out which modifications made 
+  for supporting this request.
+- Use tag HAPD_DRV_PSK_WPS to make driver can fully handle WPA-PSK funciton. 
+- Use tag HAPD_DRV_PSK_WPS to restore all EAP_BY_QUEUE function, in order to
+  make 'wsc daemon' can receive EAP packets and madatory events.
+- To support this feature, the modified Hostapd-0.5.9 shall ONLY manage 
+  802.1x Authentication & IAPP.
+- To support this feature, compile tag 'NO_IWCONTROL' shll be defined when 
+  making 'wsc daemon'.
+- To support this feature, compile tag 'WIFI_HAPD' shall also be defined.
+  
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/09/15, EricYeh,  new feature
+
+* DIGEST:
+- Support Hostapd.
+
+* TEST METHOD:
+- Remove daemons 'auth' 'iapp' 'wsc daemon', run Hostapd as daemon, 
+  check WiFi settings(ex: /proc/wlan0/mib_all) are corresponding to 
+  imported hostpad configuration file, and verify related functions 
+  (Security, WPS, WDS, IAPP...)can work well or not.
+  	
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:
+- 1x_kmsm_hmac.c - revision: 2973 (svn)         
+- 1x_md5c.c - revision: 2973 (svn)               
+- 8192cd.h - revision: 2973 (svn)                             
+- 8192cd_cfg.h - revision: 2973 (svn)                 
+- 8192cd_comapi.c - revision: 2973 (svn)    
+- 8192cd_headers.h - revision: 2973 (svn)            
+- 8192cd_ioctl.c - revision: 2973 (svn)                
+- 8192cd_net80211.c - revision: 2973 (svn)
+- 8192cd_net80211.h - revision: 2973 (svn)           
+- 8192cd_osdep.c - revision: 2973 (svn)                
+- 8192cd_proc.c - revision: 2973 (svn)             
+- 8192cd_psk.c - revision: 2973 (svn)            
+- 8192cd_psk.h - revision: 2973 (svn)                     
+- 8192cd_psk_hapd.c - revision: 2973 (svn)               
+- 8192cd_rx.c - revision: 2973 (svn)                      
+- 8192cd_security.c - revision: 2973 (svn)           
+- 8192cd_sme.c - revision: 2973 (svn)                         
+- 8192cd_util.c - revision: 2973 (svn)   
+
+* DESCRIPTION
+- Add compile tag 'WIFI_HAPD' to figure out which modifications made for
+  supporting Hostapd.
+- Hostapd will handle all EAP packets, so 'EAP_BY_QUEUE' & 
+  'INCLUDE_WPA_PSK' are undefined in 8192cd.h, which means EAP packets 
+  can be received by Hostapd from l2 socket, and EAP parts of WPA-PSK 
+  will not be managed in driver.
+- In order to keep driver handle 802.11 management frames for WPA-PSK 
+  (Hostapd only handle EAP packets), add new file '8192cd_psk_hapd.c' and 
+  utilizing WIFI_HAPD to retain these PSK parts. 
+  (Because INCLUDE_WPA_PSK will be undefined if define WIFI_HAPD)
+- Add new file '8192cd_net80211.c' & '8192cd_net80211.h' to deal with 
+  IO Control sent from driver interface of Hostapd.
+- Add function 'rsn_init()' to generate rsn_ie for 802.1x(RADIUS).
+- Add function 'event_indicate_hapd()' in 8192cd_util.c to report 
+  events to Hostapd by netlink. 
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/07/29, button, buf fix
+
+* DIGEST:
+- perofrmance drop after htc connect
+
+* TEST METHOD:
+- connect to DUT and disconnect, observe proc/wlan0/sta_info, 
+- test fail if remapped_aid = 0
+
+* ROOT CAUSE:
+- remapped_aidarray won't clear when STA disconnect
+
+* MODIFIED FILES:
+- 8192cd_cd.h      	- revision: 1.76
+- 8192cd_util.c   	- revision: 1.65
+- 8192cd_headers.h   	- revision: 1.42
+- 8192cd_sme.c    	- revision: 1.116
+- 8192cd_proc.h      	- revision: 1.45
+
+* DESCRIPTION
+- 
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/07/29, button, bug fix
+
+* DIGEST:
+- fix reconnection issue of vxd AP of repeater mode
+
+* TEST METHOD:
+- set a AP as repeater mode. let root client connect to a AP, 
+- then run WPS PIN configuration of vxd AP and other STA. 
+- The STA cannot connet to VXD AP.
+
+* ROOT CAUSE:
+- RCR CBSSID was set, HW filtered the packets to vxd AP.
+
+* MODIFIED FILES:
+- 8192cd_sme.c - revision: 1.115
+- 8192cd_osdep.c - revision: 1.85
+
+* DESCRIPTION
+- CBSSID only set in AD-HOC mode.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/07/28, davidhsu, new feature 
+
+* DIGEST:
+- Add IPv6 pass-through in client
+
+* TEST METHOD:
+- Setup two IPv6 PCs. One PC connected to AP Ether LAN, and otherother PC 
+  connected to AP-client by Ethernet.
+- Run VLC streaming between these two PC with IPv6 multicast address.
+
+* ROOT CAUSE:
+- N/A
+
+* MODIFIED FILES:
+- 8192cd_cfg.h    	- revision: 1.77
+- 8192cd_br_ext.h	- revision: 1.2
+- 8192cd_br_ext.c	- revision: 1.3
+
+* DESCRIPTION
+- Add a new define flag CL_IPV6_PASS for this feature.
+- When CL_IPV6_PASS is defined:
+   * networkaddr of NAT25 DB will be enlarged from 11 to 17 in order to 
+      store ipv6 address (16 bytes).
+   * When converting mac address from Ethernet mac to WiFi mac, beside to
+      replace dst mac addr, it needs check for network discovery packet to
+      update link-layer-address field to WiFi mac in ICMPv6 option field.
+   * When receiving a IPv6 packet from wlan and did not find a matched 
+      IP address, it needs to check if dst IP is multicast (first byte is 0xff).
+      If yes, it need reverse dst MAC to multicast addr because our AP
+      may convert multicast to unicast address and then sent it to AP-client.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/07/28, button, buf fix
+
+* DIGEST:
+- perofrmance drop after htc connect
+
+* TEST METHOD:
+- Wireless client AR928X connect to DUT, and runs the throughput..
+- cell phone(htc tattoo) connects to DUT, 
+- AR928X's throughput would drop a lot, even the cell phone is not accessing data.
+- After disconnect the cell phone and wait for many minutes, 
+- AR928X's throughput did not recover to the original performance. 
+
+* ROOT CAUSE:
+- "remapped_aidarray" do not reset after re-init,
+- if macid is used before, pstat->remapped_aid will be 0, 
+- and maps to broadcast rate table. after htc (BG mode) connects, 
+- broadcast rate table will be modified. perofrmance drop is due to 11G tx rate,
+
+* MODIFIED FILES:
+- 8192cd_cd.h      - revision: 1.75
+- 8192cd_util.c    - revision: 1.64
+
+* DESCRIPTION
+- move remapped_aidarray into pshare clear area
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/07/23, button, new feature
+
+* DIGEST:
+- hardware WAPI support
+
+* TEST METHOD:
+- 
+
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:
+- wapi_wai.c		- revision: 1.5
+- wapi_wai.h		- revision: 1.4
+- wapiCrypto.c		- revision: 1.4
+- wapiCrypto.c		- revision: 1.2
+- 8192cd_tx.c		- revision: 1.49
+- 8192cd_rx.c		- revision: 1.31
+- 8192cd_cfg.h		- revision: 1.76
+- 8192cd_osdep.c     	- revision: 1.84
+- 8192cd_hw.c		- revision: 1.138
+- 8192cd_sme.c		- revision: 1.114
+- 8192cd_util.c      	- revision: 1.63
+- 8192cd_util.h      	- revision: 1.13
+- 8192cd_ioctl.c	- revision: 1.46
+- 8192cd_proc.c		- revision: 1.44
+- 8192cd_security.h	- revision: 1.4
+- 8192cd_security.c	- revision: 1.11
+- ieee802_mib.h		- revision: 1.18
+
+* DESCRIPTION
+- 
+
+-----------------------------------------------------------------------------
+
+
+* DATE/WHOM/TYPE:
+- 2010/07/23, button, buf fix
+
+* DIGEST:
+- power tracking error after reinit
+
+* TEST METHOD:
+- keyin "flash set HW_WLAN0_11N_THER 10" in console, then reboot,
+- record swing index(0xc80), compare with the value after reinit via web.
+
+* ROOT CAUSE:
+- "priv->pshare->ThermalValue" do not reset in normal driver
+
+* MODIFIED FILES:
+- 8192cd_cd.h      - revision: 1.73
+- 8192cd_mp.c      - revision: 1.39
+
+* DESCRIPTION
+-
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/07/20, jimmylin, bug fix
+
+* DIGEST:
+- Fix abnormal behavior of interface closing if WDS earlier than root
+
+* TEST METHOD:
+- Enable WDS interfaces. While applying change, close WDS interfaces earlier
+  than root interface. Then opening root interface will cause abnormal
+  behavior.
+
+* ROOT CAUSE:
+- Because closing WDS interface, we would change the drv_state of root
+  interface. Then while closing root interface, the normal procedure will
+  be skipped. After that, re-open root interface will cause problems.
+
+* MODIFIED FILES:
+- 8192cd_osdpe.c - revision: 1.82
+
+* DESCRIPTION
+- While closing WDS interfaces, don't change the drv_state of root interface.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/07/15, BUTTON, bug fix
+
+* DIGEST:
+- Modify for TX report
+
+* TEST METHOD:
+-
+
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:
+- 8192cd.h	- revision: 1.71, 1.72
+- 8192cd_util.c	- revision: 1.61, 1.62
+- 8192cd_sme.c 	- revision: 1.112, 1.113
+- 8192cd_osdep.c - revision: 1.81
+
+* DESCRIPTION
+- add CLI protection for tx report
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/07/14, jimmylin, bug fix
+
+* DIGEST:
+- Fix reconnection issue of root client of repeater mode
+
+* TEST METHOD:
+- Set a AP as WPA-PSK. Set DUT as repeater mode while root is client mode and
+  vxd is AP mode. Let root-client connect to the AP. Then power off and then
+  power on the AP. The root-client can no longer connect to the AP.
+
+* ROOT CAUSE:
+- After root-client rescaned and found the AP, driver will check if the vxd
+  is existing or not to decide to set RCR_CBSSID or not. But the vxd
+  interface is closed while root-client starts roaming. So we should use
+  netif_running() instead of IS_DRV_OPEN() to check if the vxd is opened.
+
+* MODIFIED FILES:
+- 8192cd_sme.c - revision: 1.111
+
+* DESCRIPTION
+-
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/07/14, button, feature fine-tune
+
+* DIGEST:
+- refine L1/L2 -> L0 procedure, check FW status. 
+
+* TEST METHOD:
+- set encryption type: WPA2, a STA associated and expired, 
+  let L1 -> L0 procedurce invoke by Group key rekey timer.
+  (Group Key Rekey: 40 sec, STA expire: 17 s)
+
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:
+- 8192cd_hw.c      - revision: 1.137
+
+* DESCRIPTION
+- confirm FW accept H2C commad, then turn on rx DMA.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/07/13, jimmylin, bug fix
+
+* DIGEST:
+- Modify for MP h/w ctx
+
+* TEST METHOD:
+-
+
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:
+- 8192cd_mp.c - revision: 1.29
+
+* DESCRIPTION
+- According to Annie/SD9, 0x820 and 0x828 can't be set while h/w ctx.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/07/02, jimmylin, bug fix
+
+* DIGEST:
+- Unlock MAC register while rebooting
+
+* TEST METHOD:
+- Load 1.2b image to platform and then reload v1.2 image. The wlan interface
+  can not work.
+
+* ROOT CAUSE:
+- After wlan shutdown, the MAC register will be locked. So we need to unlock
+  MAC register.
+
+* MODIFIED FILES:
+- 8192cd_osdep.c - revision: 1.80
+
+* DESCRIPTION
+-
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/07/02, victorlo, bug fix
+
+* DIGEST:
+- RX BAR IOT issue for Atheros NIC, where atheros BAR has bug
+
+* TEST METHOD:
+- Chariot uplink test with high performance script, sometimes would cause
+  NIC to send BAR
+
+* ROOT CAUSE:
+- Atheros NIC tx BAR has bug
+
+* MODIFIED FILES:
+- data/MACPHY_REG.txt - revision: 1.12
+
+* DESCRIPTION
+- 
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/07/01, jimmylin, bug fix
+
+* DIGEST:
+- Fix not restricting HT capability in WPA/WPA2 mixed mode
+
+* TEST METHOD:
+-
+
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:
+- 8192cd_sme.c - revision: 1.110
+
+* DESCRIPTION
+-
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/06/29, jimmylin, bug fix
+
+* DIGEST:
+- Fix client mode connection unstable issue
+
+* TEST METHOD:
+- Set Netgear WGM124 as WPA-PSK/TKIP and use client mode to connect.
+  Sometimes the connection will fail.
+
+* ROOT CAUSE:
+- Sometimes WGM124 will send many retries of association responses with
+  different sequence numbers to client after 4-way handshake. The state
+  machine of our client mode is not working well and will re-process these
+  association responses and will clear the unicast key which is obtained
+  from the previous 4-way handshake. Then the traffic between WGM124 and
+  client mode can not pass through.
+
+* MODIFIED FILES:
+- 8192cd_sme.c - revision: 1.107
+
+* DESCRIPTION
+- After we receive the first association response, our state will become
+  association success. After association success, we will not re-process the
+  subsequent retry association response.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/06/28, jimmylin, new feature
+
+* DIGEST:
+- Add MP CTX of single carrier
+- Modify for external high power PA support
+
+* TEST METHOD:
+- Use "iwpriv wlan0 mp_ctx background,scr" for single carrier
+
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:
+- 8192cd.h        - revision: 1.70
+- 8192cd_mp.c     - revision: 1.28
+- 8192cd_phyreg.h - revision: 1.4
+- data/PHY_REG_2T_n_hp.txt - revision: 1.2
+
+* DESCRIPTION
+-
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/06/24, button, bug fix
+
+* DIGEST:
+- NDSi can't link under WEP encryption.
+
+* TEST METHOD:
+- 
+
+* ROOT CAUSE:
+- NDSi cannot receive AP's Ack with 1M date rate, and send many retry packets, 
+- then cannot finish all connection test in time.
+
+* MODIFIED FILES:
+- data/MACPHY_REG.txt      - revision: 1.11
+
+* DESCRIPTION
+- add 2Mbps into response rate set
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/06/23, button, feature fine-tune
+
+* DIGEST:
+- e-phy reset once
+
+* TEST METHOD:
+-
+
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:
+- 8192cd_osdep.c      - revision: 1.78
+
+* DESCRIPTION
+-
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/06/23, button, feature fine-tune
+
+* DIGEST:
+- improve tx EVM
+
+* TEST METHOD:
+-
+
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:
+- 8192cd_hw.c      - revision: 1.132
+
+* DESCRIPTION
+- clk inverted, by Arthur
+
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/06/23, jimmylin, new feature
+
+* DIGEST:
+- Decrease the number of proc files
+
+* TEST METHOD:
+-
+
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:
+- 8192cd.h      - revision: 1.68
+- 8192cd_proc.c - revision: 1.41
+
+* DESCRIPTION
+-
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/06/23, button, new feature
+
+* DIGEST:
+- tx report (ok/fail)
+
+* TEST METHOD:
+- 
+
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:
+- data/rtl8192cfwn.bin 	- revision: 1.7
+- 8192cd.h       	- revision: 1.67
+- 8192cd_sme.c 		- revision: 1.105
+- 8192cd_osdep.c 	- revision: 1.76
+- 8192cd_util.h 	- revision: 1.11
+- 8192cd_util.c 	- revision: 1.59
+- 8192cd_hw.c 		- revision: 1.131
+- 8192cd_headers.h 	- revision: 1.40
+- 8192cd_cfg.h 		- revision: 1.72
+
+* DESCRIPTION
+- request tx report every 5 sec, count in "tx_pkt", "tx_fail" field of sta_info
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/06/23, jimmylin, bug fix
+
+* DIGEST:
+- Correct beacon statistics when MBSSID is enabled
+
+* TEST METHOD:
+-
+
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:
+- 8192cd.h       - revision: 1.66
+- 8192cd_osdep.c - revision: 1.75
+
+* DESCRIPTION
+-
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/06/21, jimmylin, new feature
+
+* DIGEST:
+- Add external high power PA support
+
+* TEST METHOD:
+-
+
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:
+- data/PHY_REG_2T_n_hp.txt - revision: 1.1
+- data/radio_a_2T_n_hp.txt - revision: 1.1
+- data/radio_b_2T_n_hp.txt - revision: 1.1
+- 8192cd_headers.h         - revision: 1.39
+- 8192cd_hw.c              - revision: 1.129
+- 8192cd_mp.c              - revision: 1.27
+- 8192cd_proc.c            - revision: 1.40
+
+* DESCRIPTION
+- Should turn on compiler flag of HIGH_POWER_EXT_PA and set mib of use_ext_pa
+  to 1 to support.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/06/18, victorlo, bug fix
+
+* DIGEST:
+- Fix WPA/WPA2 group key rekey fail issue
+
+* TEST METHOD:
+- Enable group key rekey with rekey period set as no less than 10 minutes.
+  After station has connected to AP, and let both AP & station do nothing.
+  After group key rekey done, AP with different value of key content in cam
+  and mib. New connecting stations will have different cam content with AP,
+  and all wireless stations cannot ping each other after then.
+
+* ROOT CAUSE:
+- When AP switch to PCIE power save mode after all stations have expire
+  count as 0. At that mode, AP will drop all tx packets and also cannot set
+  any wlan nic registers. With conditions above, AP cannot update its own
+  cam content and send out group key rekey packets. But AP will update
+  its group key mib content. That makes AP update its mib content to all
+  stations while new or re-connections but its own cam info. Multicast
+  packets will finally cannot pass through the whole BSS correctly.
+
+* MODIFIED FILES:
+- 8192cd_tx.c      - revision: 1.45
+
+* DESCRIPTION
+- Fix WPA/WPA2 group key rekey fail issue. When there is any legal
+  tx packets from AP to BSS, AP will relieve itself from PCIE power
+  save mode.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/06/18, jimmylin, bug fix
+
+* DIGEST:
+- Fix wrong sequence of beacon with broadcast bit set in DTIM field and
+  queued broadcast packets
+
+* TEST METHOD:
+- Let power save client connect to AP and send broadcast from AP to see if
+  the DTIM BC bit is set and the sequence of beacon and queued broadcast
+  packets
+
+* ROOT CAUSE:
+- We used data queue to send queued broadcast packets, but the hardware
+  doesn't guarantee the sequence of beacon and data queue. In haredware
+  design, we should use high queue to send queued broadcast packets. Then
+  hardware MAC will send broadcast packets after beacon.
+
+* MODIFIED FILES:
+- 8192cd.h         - revision: 1.64
+- 8192cd_cfg.h     - revision: 1.70
+- 8192cd_headers.h - revision: 1.38
+- 8192cd_hw.c      - revision: 1.127
+- 8192cd_osdep.c   - revision: 1.74
+- 8192cd_sme.c     - revision: 1.102
+- 8192cd_tx.c      - revision: 1.44
+- 8192cd_util.c    - revision: 1.58
+
+* DESCRIPTION
+-
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/06/11, button, new feature
+
+* DIGEST:
+- tx hangup reset
+
+* TEST METHOD:
+- set TxBufferAddr in txdesc (Dword8) less than 1M
+- let tx hangup occur, and see if the procedure could recover.
+
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:
+- 8192cd_hw.c     - revision: 1.126
+- 8192cd_osdec.c  - revision: 1.73
+- 8192cd_cfg.h    - revision: 1.68
+- 8192cd_sme.c    - revision: 1.101
+
+* DESCRIPTION
+-
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/6/10, ericyeh, bug fixed
+
+* DIGEST:
+- Fix some connection fail under WEP shared key (ex. WNDA3100-v1)
+
+* TEST METHOD:
+- Set AP(8196C) to WEP shared key,
+  use WNDA3100-v1 to do authentication and association.
+
+* ROOT CAUSE:
+- Test the WEP Shared key with Atheros 11n clients
+  (WNDA3100-v1, Driver v3.0.0.2),
+  Failed due to Challenge Text rejection.
+- During Authentication,
+  WNDA3100-v1 will send several "Retry" shared key authentication frames,
+  and AP will do reaction with ALL these "Retry" frmaes(if received),
+  like assigning different "Challenge Texts" for these "Retry" frames.
+  Such behavior will cause problems when making comparison between
+  assigned and received challenge texts,
+  and also may cause WNDA3100-v1 NOT issue Assocation Request.
+
+* MODIFIED FILES:
+- 8192cd_sme.c - revision: 1.99
+
+* DESCRIPTION
+- In mgt_handler(),
+  update pstat->tpcache_mgt when received unhandled Retry frames.
+- In OnAuth() and OnAssocRsp(),
+  add "pstat->tpcache_mgt = GetTupleCache(pframe);"
+  after calling alloc_stainfo() & init_stainfo(),
+  because these two functions will reset the value of tpcache_mgt,
+  such behavior will cause error
+  when try to discard repeated frames in mgt_handler().
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/06/10, keith, bug fix
+
+* DIGEST:
+- Add restriction of WPA/WPA2 TKIP from N mode
+
+* TEST METHOD:
+- 1.Enable wireless security with 802.1x and tkip only.
+- 2.Client connect to AP.
+- 3.The Probe rsp, Assoc req and Assoc rsp have n mode rate.
+
+* ROOT CAUSE:
+- We don't forbid n mode in this condition.
+
+* MODIFIED FILES:
+- rtl865x/AP/goahead-2.1.1/LINUX/flash.c, revision: 1.124
+- rtl865x/linux-2.4.18/drivers/net/rtl8192cd/8192cd_util.c, revision: 1.57
+
+* DESCRIPTION [description about the change]:
+- Enable 802.1x and tkip, client will connect with N mode.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/06/07, button, bug fix
+
+* DIGEST:
+- tx stuck issue
+
+* TEST METHOD:
+- wlan down / up
+
+* ROOT CAUSE:
+- unknown
+
+* MODIFIED FILES:
+- 8192cd_hw.c    - revision: 1.124
+- 8192cd_osdec.c   - revision: 1.72
+
+* DESCRIPTION
+- sync card disable flow with NIC team,
+- disable RF before reset BB, inform MCU before reset it.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/06/04, button, feature fine-tune
+
+* DIGEST:
+- beacon loss issue reported from huawei
+
+* TEST METHOD:
+- configure DUT to BG mode, fix rate: 2M bps,
+- run chariot thoughput script ( LAN to WLAN, 3 pairs)
+- click apply chage via webpage
+
+* ROOT CAUSE:
+- ephy hangup
+
+* MODIFIED FILES:
+- 8192cd_hw.c    - revision: 1.123
+- 8192cd_sme.c   - revision: 1.95
+
+* DESCRIPTION
+- "tx_stuck_fix" doesn't work in huawei's configuration,
+- finetune it to fit more condition.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/05/31, jimmylin, bug fix
+
+* DIGEST:
+- Remove 4/26 changing AMPDU facility dynamically by Button
+
+* TEST METHOD:
+-
+
+* ROOT CAUSE:
+- This mechanism will cause Win7 WPS test fail and iPhone 3GS connection
+  issue
+
+* MODIFIED FILES:
+- 8192cd.h     - revision: 1.63
+- 8192cd_sme.c - revision: 1.94
+
+* DESCRIPTION
+-
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/05/24, jimmylin, bug fix
+
+* DIGEST:
+- DTIM broadcast bit didn't be set if broadcast packets are queued
+
+* TEST METHOD:
+- Let power save client connect to AP and send broadcast from AP to see if
+  the DTIM BC bit is set or not
+
+* ROOT CAUSE:
+- The BC packets are not queued for VAP interfaces. The timing to send out
+  queued BC packets are not correct, either.
+
+* MODIFIED FILES:
+- 8192cd_hw.c    - revision: 1.121
+- 8192cd_osdep.c - revision: 1.71
+- 8192cd_tx.c    - revision: 1.43
+
+* DESCRIPTION
+-
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/05/21, jimmylin, bug fix
+
+* DIGEST:
+- Fix bug of handling QoS Null Data in WMM-PS
+
+* TEST METHOD:
+- Use BlackBerry associated with WMM-PS. Ping to BlackBerry will get lost.
+
+* ROOT CAUSE:
+- BlackBerry uses QoS Null Data as check frame to query queued packets in
+  WMM-PS mode. AP didn't send any packet out after receiving QoS Null Data.
+
+* MODIFIED FILES:
+- 8192cd_rx.c - revision: 1.30
+
+* DESCRIPTION
+- After AP received QoS Null Data, we try to get pstat by AID, but there is
+  no AID field in QoS Null Data. After modifying to get pstat by sa, we can
+  get the correct pstat and we can send the queued packets out.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/05/20, button, bug fix
+
+* DIGEST:
+- DTIM count error
+
+* TEST METHOD:
+- look up TIM IE in beacon frame
+
+* ROOT CAUSE:
+- download beacon twice
+
+* MODIFIED FILES:
+- 8192cd_osdep.c - revision: 1.70
+- 8192cd_sme.c -   revision: 1.93
+- 8192cd_hw.c -    revision: 1.120
+
+* DESCRIPTION
+- download beacon twice before entering L1/L2, download once in general
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/05/19, jimmylin, feature fine-tune
+
+* DIGEST:
+- Add mib to control t/r switch
+
+* TEST METHOD:
+-
+
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:
+- 8192cd_hw.c    - revision: 1.119
+- 8192cd_ioctl.c - revision: 1.42
+- 8192cd_proc.c  - revision: 1.38
+- ieee802_mib.h  - revision: 1.17
+
+* DESCRIPTION
+-
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/05/18, jimmylin, feature fine-tune
+
+* DIGEST:
+- Add TID-TxQ remapping
+
+* TEST METHOD:
+-
+
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:
+- 8192cd_cfg.h   - revision: 1.64
+- 8192cd_ioctl.c - revision: 1.40
+- 8192cd_osdep.c - revision: 1.68
+- 8192cd_proc.c  - revision: 1.37
+- 8192cd_tx.c    - revision: 1.41
+- ieee802_mib.h  - revision: 1.16
+
+* DESCRIPTION
+- Add mib to customize TID and TxQ (Traffic class) mapping
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/05/18, button, bug fix
+
+* DIGEST:
+- vap beacon content error
+
+* TEST METHOD:
+- sniffer the beacon sent by vap
+
+* ROOT CAUSE:
+- if PCIE_POWER_SAVING is defined, we need to downlaod beacon twice,
+- download beacon and probe rsp at the first time, and then download real beacon.
+- but VAP miss the second time.
+
+* MODIFIED FILES:
+- 8192cd_osdep.c - revision: 1.67
+
+* DESCRIPTION
+- VAP or VXD download beacon once (not include probe rsp)
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/05/07, button, feature fine-tune
+
+* DIGEST:
+- add efuse support in menuconfig
+
+* TEST METHOD:
+-
+
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:
+- Config.in - revision: 1.9
+- 8192cd_osdep.c - revision: 1.64
+- 8192cd_cfg.h - revision: 1.62
+- 8192cd_hw.c - revision: 1.112
+- AP/goahead-2.1.1/LINUX/Makefile - revision: 1.54
+- AP/goahead-2.1.1/LINUX/flash.c  - revision: 1.120
+
+* DESCRIPTION
+- menuconfig: Network device support -> Wireless LAN -> Efuse Support
+- if Efuse Support is selected, read MAC Addr and Tx Power in efuse instead of flash.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/05/07, brian, new feature
+
+* DIGEST:
+- Enable user specify multicast rate used
+
+* TEST METHOD:
+- Sniffer packets from LAN to WLAN in multicast traffic
+
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:
+- 8192cd_tx.c - revision: 1.40
+
+* DESCRIPTION
+- when lowestMlcstRate = 0, means multicast rate use the highest rate in
+  in basic rate set ; others, it is the bitmap as used in fixedRate.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/05/07, jimmylin, feature fine-tune
+
+* DIGEST:
+- Add GPIO8 LED2 lighting pattern 12
+
+* TEST METHOD:
+-
+
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:
+- 8192cd.h - revision: 1.61
+- 8192cd_sme.c - revision: 1.92
+
+* DESCRIPTION
+- Add GPIO8 LED2 lighting patter of one LED of enable_tx_rx_data. The
+  behavior is link LED0 enable_tx_rx_data (mode 7 pattern). LED_TYPE retains
+  as 12.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/05/07, jimmylin, bug fix
+
+* DIGEST:
+- Fix WAPI crash issue from ZhaoBo
+
+* TEST METHOD:
+-
+
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:
+- 8192cd.h - revision: 1.60
+- 8192cd_util.c - revision: 1.55
+- wapi_wai.c - revision: 1.4
+
+* DESCRIPTION
+-
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/05/06, brian, new feature
+
+* DIGEST:
+- enable config EDCA parameters manually
+
+* TEST METHOD:
+- enable then interface down-up
+- verify by beacon and chariot throughput testing
+
+* ROOT CAUSE:
+-
+* MODIFIED FILES:
+- 8192cd.h - revision: 1.59
+- 8192c_cfg.h - revision: 1.61
+- 8192cd_headers.h - revision: 1.34
+- 8192cd_hw.c - revision: 1.111
+- ieee802_mib.h - revision: 1.15
+- 8192cd_proc.c - revision: 1.36
+- 8192cd_ioctl.c - revision: 1.38
+- 8192cd_sme.c - revision: 1.91
+- 8192cd_util.c - revision: 1.54
+- ieee802_mib.h - revision: 1.15
+
+
+* DESCRIPTION
+- default not enabled
+- only take effect after interface down-up, reboot will be default
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/05/03, button, new feature
+
+* DIGEST:
+- read tx power from efuse
+
+* TEST METHOD:
+- parsing the efuse content of a known value 92ce 
+
+* ROOT CAUSE:
+- 
+* MODIFIED FILES:
+- 8192cd.h - revision: 1.58
+- 8192c_reg.h - revision: 1.8
+- 8192cd_headers.h - revision: 1.33
+- 8192cd_hw.c - revision: 1.109
+- 8192cd_hw.h - revision: 1.12
+- ieee802_mib.h - revision: 1.13
+- 8192cd_mp.c - revision: 1.26
+- 8192cd_proc.c - revision: 1.35
+- 8192cd_ioctl.c - revision: 1.37
+- 8192cd_osdep.c - revision: 1.63
+
+
+* DESCRIPTION
+- if autoload from efuse success, and the mib "use_efuse" is set, 
+- PG value is valid, then use the tx power index in efuse.
+
+-----------------------------------------------------------------------------
+
+
+* DATE/WHOM/TYPE:
+- 2010/04/26, victorlo, bug fix
+
+* DIGEST:
+- Dynamic NAV protect length switch for IOT
+
+* TEST METHOD:
+- Intel 5100 connect to AP with using AC power adapter, TP is ok. But chariot 
+  TP test will drop a lot when AC power adapter of Intel 5100 is cut off
+
+* ROOT CAUSE:
+- AP NAV protect length is too short for Intel 5100 switching to
+  MIMO power-save dynamic mode
+
+* MODIFIED FILES:
+- 8192cd.h - revision: 1.56
+- 8192cd_headers.h - revision: 1.32
+- 8192cd_hw.c - revision: 1.107
+- 8192cd_sme.c - revision: 1.90
+- 8192cd_util.c - revision: 1.52
+- data/MACPHY_REG.txt - revision: 1.10
+
+* DESCRIPTION
+- Dynamic NAV protect length switch for Intel 5100 
+  11n MIMO power-save IOT issue
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/04/26, Button, feature fine-tune
+
+* DIGEST:
+- chaneg AMPDU facility dynamically 
+
+* TEST METHOD:
+- 
+
+* ROOT CAUSE:
+- 
+
+* MODIFIED FILES:
+- 8192cd.h 	- revision: 1.55
+- 8192cd_sme.c  - revision: 1.89
+
+* DESCRIPTION
+- default ampdu facility is 32k, when receives assoc req from broadcom sta,
+- change to 16k, and send dissasoc. 10 sec later, change back to 32k.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/04/23, victorlo, new feature
+
+* DIGEST:
+- Add Japan 2.4G band (safety) spec support
+
+* TEST METHOD:
+- Set different power level to make sure AP will stop tx (packet
+  and beacon) when there is a continuous signal over the specified
+  power level.
+
+* ROOT CAUSE:
+- n/a
+
+* MODIFIED FILES:
+- 8192cd.h - revision: 1.54
+- 8192cd_headers.h - revision: 1.31
+- 8192cd_hw.c - revision: 1.106
+- 8192cd_hw.h - revision: 1.11
+- 8192cd_ioctl.c - revision: 1.36
+- 8192cd_proc.c - revision: 1.34
+- 8192cd_sme.c - revision: 1.88
+- 8192cd_util.c - revision: 1.51
+
+* DESCRIPTION
+- Add Japan 2.4G band (safety) spec support
+- Power threshold can be set by mib "edcca_thd", 0 is default as
+  disabled, suggested value is 50.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/04/22, Button, bug fix
+
+* DIGEST:
+- 20Mhz Reperater mode performance issue
+
+* TEST METHOD:
+- 96b: pure AP
+- 96c: repeater mode, 
+       root: AP 20MHz BW, 
+       vxd: client, connect to 96b AP
+- chariot can't run under the condition: 96b tx 96c rx
+
+* ROOT CAUSE:
+- Tx rate of 96b is 40M MCS rate.
+
+* MODIFIED FILES:
+- 8192cd_sme.c - revision: 1.87
+
+* DESCRIPTION
+- vxd set BW support in probe req according to target AP and root AP's capability.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/04/22, victorlo, feature fine-tune
+
+* DIGEST:
+- Update APK to version R07
+
+* TEST METHOD:
+- n/a
+
+* ROOT CAUSE:
+- n/a
+
+* MODIFIED FILES:
+- 8192cd_hw.c - revision: 1.104
+
+* DESCRIPTION
+- Update APK to version R07, to bound calibrated output range
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/04/21, Button, feature bug fix
+
+* DIGEST:
+- fix beacon stop issue in ad-hoc mode
+
+* TEST METHOD:
+- 96b 96c connect via ad-hoc mode
+
+* ROOT CAUSE:
+- hw may sync wrong tsf in the init flow or join IBSS procedure.
+
+* MODIFIED FILES:
+- 8192cd_sme.c -      revision: 1.84 1.85
+- 8192cd_hw.c -      revision: 1.100
+
+* DESCRIPTION
+- check tsf every sec, correct it when sync wrong value.
+- disable beacon function in MacInit
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/04/21, pluswang, merge code
+
+* DIGEST:
+- merge MP new feature from 2.6 
+  design:caryLee 
+  
+* TEST METHOD:
+* ROOT CAUSE:
+
+* MODIFIED FILES:
+-1.51	8192cd.h
+-1.48	8192cd_util.c
+-1.30	8192cd_headers.h
+-1.27	8192cd_rx.c
+-1.22	8192cd_mp.c
+
+* DESCRIPTION
+
+manual:
+iwpriv wlan0 mp_arx filter_init    //filter init
+iwpriv wlan0 mp_arx filter_SA=FF:FF:FF:FF:FF:FF   //setting SA filter
+iwpriv wlan0 mp_arx filter_DA= FF:FF:FF:FF:FF:FF  //setting DA filter
+iwpriv wlan0 mp_arx filter_BSSID= FF:FF:FF:FF:FF:FF //setting BSSID filter
+iwpriv wlan0 mp_arx filter_clean  // clean all filter
+iwpriv wlan0 mp_arx filter_print  // display all filter
+
+example:
+1 init Filter:
+	iwpriv wlan0 mp_arx filter_init 
+2 add filter:
+	//eg setting DA and BSSID
+	iwpriv wlan0 mp_arx filter_DA=00:26:5A:08:65:ed     
+	iwpriv wlan0 mp_arx filter_BSSID=da:85:05:95:53:b6       
+
+	3 start arx test:
+	iwpriv wlan0 mp_arx start
+
+4 stop arx test:
+    //will 1)stop arx test and 2)display result and 3)clean filter
+	iwpriv wlan0 mp_arx stop
+
+only those packets that meet DA and BSSID filter 
+will be received and census.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/04/21, jimmylin, bug fix
+
+* DIGEST:
+- Add key id check for key-mapping key
+
+* TEST METHOD:
+- Config 802.1x+WEP, the authentication is done but the traffic is not
+  passed.
+
+* ROOT CAUSE:
+- In new CAM design, bit(8) of register SECCFG(0x680) should be set if the
+  key id table is filled.
+
+* MODIFIED FILES:
+- 8192c_reg.h - revision: 1.7
+- 8192cd_hw.c - revision: 1.98
+
+* DESCRIPTION
+-
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/04/20, victorlo, new feature
+
+* DIGEST:
+- Concurrent support up to 64 clients
+
+* TEST METHOD:
+- n/a
+
+* ROOT CAUSE:
+- n/a
+
+* MODIFIED FILES:
+- 8192cd.h - revision: 1.52
+- 8192cd_cfg.h - revision: 1.57
+- 8192cd_proc.c - revision: 1.33
+- 8192cd_sme.c - revision: 1.83
+- 8192cd_tx.c - revision: 1.39
+- 8192cd_util.c - revision: 1.49
+
+* DESCRIPTION
+- Concurrent support up to 64 clients
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/04/20, Button, feature fine-tune
+
+* DIGEST:
+- reduce receive AMPDU size form 32k to 16k
+
+* TEST METHOD:
+- run chariot with broadcom WPC600N, BW 20 MHz, uplink
+
+* ROOT CAUSE:
+- rx packet buffer size of 92ce is 10k bytes, if we declare rx AMPDU size=32k in HTCAP IE
+- rx FIFO overflow (HIMR_RXFOVW) will occur frequently, and degrades the throughpt.
+
+* MODIFIED FILES:
+- 8192cd_sme.c -    	revision: 1.81
+
+* DESCRIPTION
+- 
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/04/09, Button, feature fine-tune
+
+* DIGEST:
+- add a bit ctrl to forbid N mode
+
+* TEST METHOD:
+- 
+
+* ROOT CAUSE:
+- 
+
+* MODIFIED FILES:
+- 8192cd_osdep.c -      revision: 1.60
+- 8192cd_util.c -    	revision: 1.47
+
+* DESCRIPTION
+- if bit 3 of the MIB "lgyEncRstrct" is set, and enc type is WEP or TKIP, 
+- AP works under BG mode
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/04/09, Button, feature fine-tune
+
+* DIGEST:
+- extend the waiting time of entering L1/L2 state
+
+* TEST METHOD:
+- Microssoft DTM 
+
+* ROOT CAUSE:
+- 
+
+* MODIFIED FILES:
+- 8192cd_cfg.h -      revision: 1.54
+- 8192cd_ioctl.c -    revision: 1.34
+- 8192cd_rx.c -       revision: 1.25
+- 8192cd_security.c - revision: 1.10
+
+* DESCRIPTION
+- extend the waiting time from 3s to 10s in order to pass WCN wireless test
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/04/09, victorlo, new feature
+
+* DIGEST:
+- Enable APK
+
+* TEST METHOD:
+- n/a
+
+* ROOT CAUSE:
+- n/a
+
+* MODIFIED FILES:
+- 8192cd_hw.c - revision: 1.97
+
+* DESCRIPTION
+- Enable APK(PA Analog Pre-distortion calibration) to enhance tx EVM
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/04/08, Button, feature fine-tune
+
+* DIGEST:
+- Refine RF CCK shape filter setting
+
+* TEST METHOD:
+- 
+
+* ROOT CAUSE:
+- 
+
+* MODIFIED FILES:
+- 8192cd.h - revision: 1.50
+- 8192cd_mp.c - revision: 1.21
+- 8192cd_hw.c - revision: 1.95
+
+* DESCRIPTION
+- adjust swing index according to power tracking effect
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/04/06, jimmylin, bug fix
+
+* DIGEST:
+- When restrict Realtek client in N mode for WEP/TKIP, not only restrict
+  8192S client
+
+* TEST METHOD:
+-
+
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:
+- 8192cd.h - revision: 1.49
+- 8192cd_osdep.c - revision: 1.59
+- 8192cd_sme.c - revision: 1.81
+- 8192cd_util.c - revision: 1.46
+
+* DESCRIPTION
+-
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/04/07, button, bug fix
+
+* DIGEST:
+- beacon frame includes beacon and probe rsp.
+
+* TEST METHOD:
+- sniffer the beacon packet sent by 88c/92c test chip
+
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:
+- 8192cd_osdep.c - revision: 1.58
+- 8192cd_sme.c - revision: 1.80
+
+* DESCRIPTION
+- download beacon once if power saving is not enable
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/04/06, jimmylin, feature fine-tune
+
+* DIGEST:
+- Fine tune DIG according to Luke Lee
+
+* TEST METHOD:
+-
+
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:
+- 8192cd.h - revision: 1.48
+- 8192cd_hw.c - revision: 1.94
+- 8192cd_ioctl.c - revision: 1.33
+- 8192cd_sme.c - revision: 1.79
+
+* DESCRIPTION
+- Luke Lee tested new DIG flow on ADSL platform and asked all AP driver to
+  sync the new DIG flow.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/04/01, button, but fix
+
+* DIGEST:
+- fix L1 unstable problem
+
+* TEST METHOD:
+- let an AP enter L1 state, then use a client associate to it.
+- or start site survey via webpage when AP in L1 state, check the BSS list.
+
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:
+- 8192cd_hw.c        Rev. 1.92
+
+
+* DESCRIPTION
+- if disable printk function, the timing of entering L1 flow changes,
+- it will cause PCIe link unstable, and change back to L0 fail.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/03/31, jimmylin, feature fine-tune
+
+* DIGEST:
+- Restrict AMPDU packet number in ADDBA Req/Rsp for Broadcom in 8M package
+
+* TEST METHOD:
+- Test uplink throughput with WPC600N and get bad performance
+
+* ROOT CAUSE:
+- We doubt Broadcom send too large AMPDU to us and we can not handle it under
+  8M package so there are some packets lost. Therefore the uplink throughput
+  is bad.
+
+* MODIFIED FILES:
+- 8192cd_sme.c - revision: 1.78
+
+* DESCRIPTION
+- We restrict AMPDU packet number in ADDBA Req/Rsp for Broadcom in 8M package
+  to 32 to let Broadcom send less AMPDU to us. Then we can handle it smoothly
+  and get better performance.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/03/31, button, feature fine-tune
+
+* DIGEST:
+- disable pcie clk in driver
+
+* TEST METHOD:
+- 
+
+* ROOT CAUSE:
+- 
+
+* MODIFIED FILES:
+- 8192cd_hw.c        Rev. 1.91
+- 8192cd_osdep.c     Rev. 1.55 1.56	
+
+* DESCRIPTION
+- turn on / off pcie clk in rtl8192cd_open, rtl8192cd_close
+- needn't patch set_init.c in all package.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/03/30, victorlo, feature fine-tune
+
+* DIGEST:
+- Refine RF CCK shape filter setting
+
+* TEST METHOD:
+- n/a
+
+* ROOT CAUSE:
+- 92C formal chip CCK BB HW doesnot support 0.5dB/gain step, and 
+  1dB/gain setp is the minumum calibration scale supporting. CCK
+  power cal will have issue.
+
+* MODIFIED FILES:
+- 8192cd_mp.c        Rev. 1.20 
+
+* DESCRIPTION
+- Refine RF CCK shape filter setting to achieve the 0.5dB gain step,
+  and has no effect to OFDM/MCS power.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/03/26, button, bug fix
+
+* DIGEST:
+- hang up or core dump when disable or enable WLAN interface 
+
+* TEST METHOD:
+- disable or enable WLAN interface via webpage
+
+* ROOT CAUSE:
+- if clk ever disable, we needs do pcie reset again
+
+* MODIFIED FILES:
+- 8192cd_hw.c            			Rev. 1.88 
+- 8192cd_osdep.c         			Rev. 1.51 1.53
+- AP/goahead-2.1.1/LINUX/system/set_init.c  	Rev. 1.39
+
+* DESCRIPTION
+- when "PCIE_POWER_SAVING" is defined, enable pcie clk rtl8192cd_open of 
+- root interface, disable in "radio_off" func.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/03/26, victorlo, feature fine-tune
+
+* DIGEST:
+- Refine GPIO8 LED2 lighting pattern
+
+* TEST METHOD:
+- n/a
+
+* ROOT CAUSE:
+- n/a
+
+* MODIFIED FILES:
+- 8192cd.h               Rev. 1.46
+- 8192cd_osdep.c         Rev. 1.52
+- 8192cd_rx.c            Rev. 1.24
+- 8192cd_sme.c           Rev. 1.76
+- 8192cd_tx.c            Rev. 1.37
+
+* DESCRIPTION
+- Refine GPIO8 LED2 lighting pattern, changed from one LED enable_tx_rx mode
+  (mode 7 pattern) to one LED link_rx_tx mode (mode 3 pattern). LED_TYPE
+  retains as 11.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/03/25, button, new feature
+
+* DIGEST:
+- power tracking for MP & normal driver
+
+* TEST METHOD:
+- check siwng index(c80,c88) vary with thermel meter correclty
+
+* ROOT CAUSE:
+- 
+
+* MODIFIED FILES:
+- 8192cd_hw.c            Rev. 1.87
+- 8192cd_sme.c           Rev. 1.74
+- 8192cd.h               Rev. 1.45
+- 8192cd_headers.h        Rev. 1.27
+- 8192cd_phyreg.h        Rev. 1.2
+- 8192cd_mp.c             Rev. 1.18
+
+* DESCRIPTION
+- porting form NIC driver 
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/03/25, button, feature fine-tune
+
+* DIGEST:
+- disable RTS for Intel client in long range
+
+* TEST METHOD:
+- emulator setting: attenuation 24dB
+
+* ROOT CAUSE:
+- 
+
+* MODIFIED FILES:
+- 8192cd.h           Rev. 1.45
+- 8192cd_sme.c       Rev. 1.74
+- 8192cd_tx.c        Rev. 1.36
+
+* DESCRIPTION
+- RTS data date down to 1 Mbps, occupy channel resource,
+- disable RTS when RSSI <30, to get better throughput.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/03/25, button, bug fix
+
+* DIGEST:
+- system hang when leaving L2
+
+* TEST METHOD:
+- 
+
+* ROOT CAUSE:
+- while(1) loop
+
+* MODIFIED FILES:
+- 8192cd_hw.c        Rev. 1.87
+
+* DESCRIPTION
+- auto-load fail card will set power switch to PFM mode when doing pcie reset,
+- but auto-load success card set power mode according to efuse 6[5]
+- assume power mode will change to PFM mdoe when doing pcie reset can't fit all situation.
+
+-----------------------------------------------------------------------------
+* DATE/WHOM/TYPE:
+- 2010/03/25, victorlo, feature fine-tune
+
+* DIGEST:
+- Refine VI EDCA setting to comply WiFi approved-n logo test
+
+* TEST METHOD:
+- WiFi test plan 4.2.20 T07
+
+* ROOT CAUSE:
+- AP's VI tx stream is too aggressive to VO stream from other devices
+
+* MODIFIED FILES:
+- 8192cd.h           Rev. 1.44
+- 8192cd_hw.c        Rev. 1.86
+- 8192cd_sme.c       Rev. 1.73
+- 8192cd_util.c      Rev. 1.45
+
+* DESCRIPTION
+- AP always detects if there is any VO stream in the same BSS, and degrades
+  VI EDCA parameter setting when any is found. By temporary cancelling TXOP
+  in VI EDCA setting, AP will comply WiFi logo test.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/03/24, victorlo, bug fixed
+
+* DIGEST:
+- Refine RRSR bitmap at GN mode
+- Set RF reg depends on band in use for better tx EVM
+
+* TEST METHOD:
+- WPC600N connects AP at N mode, chariot test with 3D3U high-TP script. Open
+  shielding room door when chariot test becomes stable, tx rate of WPC600N
+  will degrade to CCK. Tx rate of WPC600N will hardly resume after the door
+  has closed.
+
+* ROOT CAUSE:
+- WPC600N (Broadcom) cannot easily receive AP's 802.11 Ack with rate 11M and
+  5.5M. After its tx rate degraded to CCK, it can hardly recover its tx rate
+  to MCS.
+
+* MODIFIED FILES:
+- 8192cd_hw.c        Rev. 1.84
+
+* DESCRIPTION
+- Excludes CCK 11M and 5.5M at GN mode to prevent Broadcom IOT
+- Set RF reg depends on band in use for better tx EVM
+	reg 0x26 is 0x4f000 for G and N mode
+	reg 0x26 is 0xf400 for B mode
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/03/23, Button, feature fine-tune, bug fixed
+
+* DIGEST:
+- refine enter, leaving L2 flow
+- add a iwpriv cmd to stop power saving
+
+* TEST METHOD:
+- let a client connect and disconnect to an 96c AP having power saving functions, 
+- after enter and leving L2 seveal times, AP won't send any packet except beacon.
+
+* ROOT CAUSE:
+- PERST will let SPS enter PFM mode
+- 
+
+* MODIFIED FILES:
+- 8192cd_hw.c        Rev. 1.83
+- 8192cd_ioctl.c      Rev. 1.31
+
+* DESCRIPTION
+- PCIe power saving ON/OFF
+	on:  setmig ps 119
+	off: iwpriv wlan0 stopps
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/03/19, jimmylin, bug fixed
+
+* DIGEST:
+- Fix management frame buffer leakage after several times of entering and
+  leaving L2
+
+* TEST METHOD:
+- Set both AP and AP-client to WPA2-PSK but different keys. Let AP-client try
+  to connect to AP repeatedly. Eventually, AP can't send any management frame.
+
+* ROOT CAUSE:
+- After entering L2, Tx and Rx descriptor registers will be clear. After
+  leaving L2, Tx and Rx descriptor registers will be reset, and Tx and Rx
+  head and tail pointers will be clear to 0. But the buffers used in Tx and
+  Rx descriptors are not freed correctly.
+
+* MODIFIED FILES:
+- 8192cd_hw.c - revision: 1.82
+
+* DESCRIPTION
+- Before entering L2, we should call rtl8192cd_tx_dsr() and
+  rtl8192cd_rx_isr() to free used buffers first after stoping DMA.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/03/17, Button, bug fixed
+
+* DIGEST:
+- fix bug of repeater mode. 
+- repeater mode, client mode, ad-hoc mode test ok.
+
+* TEST METHOD:
+- 
+
+* ROOT CAUSE:
+- NETYPE, BCN_CTRL setting error.
+
+* MODIFIED FILES:
+- 8192cd_hw.c        Rev. 1.80
+- 8192cd_sme.c       Rev. 1.71
+- 8192c_reg.h        Rev. 1.6	
+- 8192cd_osdep.c     Rev. 1.47
+- 8192cd_util.c      Rev. 1.43
+
+* DESCRIPTION
+- repeater mode function doesn't work
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/03/17, jimmylin, feature fine-tune
+
+* DIGEST:
+- Add 1R CCA feature
+
+* TEST METHOD:
+-
+
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:
+- 8192cd.h - revision: 1.43
+- 8192cd_hw.c - revision: 1.79
+- 8192c_sme.c - revision: 1.70
+- 8192c_ioctl.c - revision: 1.29
+- 8192c_proc.c - revision: 1.27
+
+* DESCRIPTION
+- In some customers' boards, there is noise around one of the receiving
+  path. Using 1R CCA to reduce noise influence. There is a new mib of "1rcca"
+  added. When 1rcca is set to 1, only path A will be used to CCA. When 1rcca
+  is set to 2, only path B will be used to CCA. The default value is 0 and
+  means using both 2 pathes to CCA.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/3/12, Button, new feature
+
+* DIGEST:
+- 8192ce formal chip support
+
+* TEST METHOD:
+-
+
+* ROOT CAUSE:
+- n/a
+
+* MODIFIED FILES:
+- 8192cd_hw.c - revision: 1.76
+- 8192cd_osdep.c - revision: 1.46
+- 8192cd.h - revision: 1.42
+- 8192cd_proc.c - revision: 1.26
+- 8192cd_headers.h - revision: 1.24
+- data/radio_b_2T_n.txt - revision: 1.1
+- data/radio_b_2T.txt - revision: 1.1
+- data/radio_a_2T_n.txt - revision: 1.1
+- data/radio_a_2T.txt - revision: 1.1
+- data/radio_a_1T_n.txt - revision: 1.1
+- data/radio_a_1T.txt - revision: 1.1
+- data/PHY_REG_2T_n.txt - revision: 1.1
+- data/PHY_REG_2T.txt - revision: 1.1
+- data/PHY_REG_1T_n.txt - revision: 1.1
+- data/PHY_REG_1T.txt - revision: 1.1
+- data/AGC_TAB_n.txt - revision: 1.1
+
+* DESCRIPTION
+- upgrade PHY parameter from Mantis,
+  8192C_PCIE_PHYforMP_100113.zip
+  8188C_PCIE_PHYforMP_100113.zip
+  8192C_Formal_PCIE_PHYforMP_100311.zip
+  8188C_Formal_PCIE_PHYforMP_100311_1.zip
+  modify radio_a_2T_n.txt radio_a_1T_n.txt 0x26 for better Tx EVM
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/03/10, victorlo, new feature
+
+* DIGEST:
+- Add LED2 GPIO8 lighting mode
+
+* TEST METHOD:
+- LED2 background on, when throughput keeps increasing,
+  frequency of LED on and off becomes faster
+
+* ROOT CAUSE:
+- n/a
+
+* MODIFIED FILES:
+- 8192cd.h - revision: 1.41
+- 8192cd_sme.c - revision: 1.67
+
+* DESCRIPTION
+- Add LED2 lighting by using GPIO8 as output pin
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/03/09, chris, add friendly API
+
+* DIGEST:
+- Add text-based config file support
+- Support iwconfig/iwlist
+
+* TEST METHOD:
+- config file in /etc/Wireless/RTL8192CD.dat with format:
+   "interface"_"mib_command" (autotest supported)
+  e.g. wlan0_ssid=XXXX
+- use iwconfig and iwlist
+
+* ROOT CAUSE:
+- n/a
+
+* MODIFIED FILES:
+- 8192cd_comapi.c - revision: 1.2
+- 8192cd_comapi.h - revision: 1.2
+- 8192cd_headers.h - revision: 1.21
+- 8192cd_ioctl.c - revision: 1.27
+- 8192cd_osdep.c - revision: 1.42
+- 8192cd_proc.c - revision: 1.24
+- 8192cd_security.h - revision: 1.2
+- Config.in - revision: 1.8
+- Makefile - revision: 1.7
+
+* DESCRIPTION
+- 8192cd_comapi.c - file parsing and call set_mib()
+- 8192cd_comapi.h - file parsing
+- 8192cd_ioctl.c - support iwconfig/iwlist
+- 8192cd_osdep.c - load config file when open
+- 8192cd_proc.c - for autotest
+- 8192cd_security.h - wps related
+- Config.in - new menuconfig item
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/03/09, victorlo, feature fine-tune
+
+* DIGEST:
+- Refine IQK retry setting
+
+* TEST METHOD:
+- n/a
+
+* ROOT CAUSE:
+- Current IQK retry limit and relative settings would cause unreasonable
+  number of times of retry
+
+* MODIFIED FILES:
+- 8192cd_hw.c - revision: 1.73
+
+* DESCRIPTION
+- Modify IQK retry limit and way of retry counting
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/03/07, jimmylin, bug fixed
+
+* DIGEST:
+- Fix client mode MC/BC decryption error issue
+
+* TEST METHOD:
+- Set client mode and DHCP client. AP-client can't get IP.
+
+* ROOT CAUSE:
+- Formal mask IC has changed the CAM search flow. But our CAM setting didn't
+  follow up.
+
+* MODIFIED FILES:
+- 8192cd_hw.c - revision: 1.71
+- 8192c_reg.h - revision: 1.5
+
+* DESCRIPTION
+- Modify CAM setting according to the latest spec.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/03/04, jimmylin, bug fixed
+
+* DIGEST:
+- Fix incorrect HT IE of client mode if AP changed bandwidth
+
+* TEST METHOD:
+- Set AP in 20M mode, then let AP-client connect to the AP. Then change
+  AP to 40M mode, and let AP-client reconnect to the AP automatically.
+
+* ROOT CAUSE:
+- When applying change of bandwidth of the AP, AP will send disassociation
+  request to AP-client. AP-client will not re-scan and reconnect to the AP
+  directly. So AP-client doesn't know the AP has already changed the
+  bandwidth.
+
+* MODIFIED FILES:
+- 8192cd_sme.c - revision: 1.65
+
+* DESCRIPTION
+- When AP-client received disassociation request, do re-scan channels. Then
+  use the new capability to connect to the AP.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/03/04, jimmylin, new feature
+
+* DIGEST:
+- Add LC Calibration
+
+* TEST METHOD:
+-
+
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:
+- 8192cd_hw.c - revision: 1.64
+
+* DESCRIPTION
+- In the init sequence, we will do LCK after IQK.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/3/3, victorlo, bug fixed
+
+* DIGEST:
+- Tx rate might degrade when time goes by.
+
+* TEST METHOD:
+- Use test tool like VLC to do downlink continuously, will casue
+  AP tx initial rate become lower.
+
+* ROOT CAUSE:
+- When it is now downlink continuously, and client may sometimes
+  change its mode to power-save mode. Then packets queued in AP
+  FIFO will retry until tx success, and will cause AP eventually
+  degrade initial tx rate to that client mistakenly.
+
+* MODIFIED FILES:
+- 8192cd.h - revision: 1.39
+- 8192cd_headers.h - revision: 1.20
+- 8192cd_osdep.c - revision: 1.41
+- 8192cd_sme.c - revision: 1.64
+- 8192cd_util.c - revision: 1.39
+- rtl8192cfwn.bin - revision: 43
+
+* DESCRIPTION
+- By this bug fixed, AP will not do statistics of tx success to a
+  client when one changes its mode to power-save.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/3/3, jason, feature fine-tune
+
+* DIGEST:
+- PCIe PHY updated by designer
+
+* TEST METHOD:
+- LAN/WLAN Chariot test okay and throughput is the same as the previous version.
+
+* ROOT CAUSE:
+- Run PCIE PHY test with rtl8196c with RD center.
+
+* MODIFIED FILES:
+- 8192cd_osdep.c - revision: 1.40
+
+* DESCRIPTION
+- change PCIe PHY parameter for 88c normal chip
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/3/2, Button, new feature
+
+* DIGEST:
+- PCIe L2 support
+
+* TEST METHOD:
+- if there's no sta links to AP, PCIe link status(b8b00728) should be 0,
+- use a wireless client connect to AP, link status b[0-4] should change to 0x11,
+- AP must respond Auth in 100ms, use sniffer to verify it.
+
+* ROOT CAUSE:
+- n/a
+
+* MODIFIED FILES:
+- 8192cd_hw.c - revision: 1.63
+- 8192cd_ioctl.c - revision: 1.25
+- 8192cd_rx.c - revision: 1.20
+
+* DESCRIPTION
+- change PCIe link state to L2 under idle mode (no STA linls) for 88c normal chip
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/03/2, davidhsu, new feature
+
+* DIGEST:
+- Add lazy WDS feature
+
+* TEST METHOD:
+- Set a mac address in a wds entry of AP1 manually
+- Enable lazy WDS (w/o need to set mac address of wds entry) in AP2
+- Then, two APs could commnucate in WDS channel
+
+  * ROOT CAUSE:
+- n/a
+
+* MODIFIED FILES:
+- 8192cd.h - revision: 1.38
+- 8192cd_cfg.h - revision: 1.42
+- 8192cd_headers.h - revision: 1.19
+- 8192cd_osdep.c - revision: 1.38
+- 8192cd_proc.c - revision: 1.23
+- 8192cd_rx.c - revision: 1.19
+- 8192cd_security.c - revision: 1.6
+- 8192cd_sme.c - revision: 1.62
+- 8192cd_util.c - revision: 1.38
+- 8192cd_psk.c - revision: 1.5
+
+* DESCRIPTION
+- Add a new define flag (LAZY_WDS) for this feature, default is not defined
+- When lazy wds is enabled (mib value of wds_enable is set to 2), it will
+   dynamically learn wds mac address by incoming packet.
+- Also, after this wds entry is created dynamically, the expired timer will
+  count down its expired time, like a noraml client did. When expired, this
+  entry will be flushed. Currently the max entry is 8 (NUM_WDS).
+- Please note, when using lazy wds, wds interface (e.g., wlan0-wds0...)
+  must be binded to bridge interface (br0) and up in advanced.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/02/24, PlusWang, feature fine-tune
+
+* DIGEST:
+- Disable 802.11d feature under default case
+
+* TEST METHOD:
+- 
+
+* ROOT CAUSE:
+-
+
+* MODIFIED FILES:
+- 8192cd.h - revision: 1.40
+
+* DESCRIPTION
+- Disable define flag "DOT11D"
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/02/23, jimmylin, feature fine-tune
+
+* DIGEST:
+- Process ADDBA/DELBA according to TID
+
+* TEST METHOD:
+- Send packet with DSCP value of non-0, but we will send ADDBA of TID 0.
+
+* ROOT CAUSE:
+- We didn't process ADDBA/DELBA according to TID. We have only one variable
+  of ADDBA status for all traffic classes.
+
+* MODIFIED FILES:
+- 8192cd.h - revision: 1.37
+- 8192cd_sme.c - revision: 1.53
+- 8192cd_tx.c - revision: 1.32
+
+* DESCRIPTION
+- We add an array of variables for all traffic classes and then will process
+  ADDBA/DELBA according to TID.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/02/11, jimmylin, feature fine-tune
+
+* DIGEST:
+- Fine tune IOT dynamic mechanism for vap interfaces
+
+* TEST METHOD:
+- Test TP with client associated in VAP interfaces will get lower result
+  comparing with associating to root interface
+
+* ROOT CAUSE:
+- Originally we pick the highest TP station associated in root interface
+  as the target to do IOT dynamic mechanism.
+
+* MODIFIED FILES:
+- 8192cd.h - revision: 1.36
+- 8192cd_headers.h - revision: 1.18
+- 8192cd_sme.c - revision: 1.52
+- 8192cd_util.c - revision: 1.37
+
+* DESCRIPTION
+- Now we will take the stations associated in VAP interfaces into
+  consideration.
+
+-----------------------------------------------------------------------------
+
+* DATE/WHOM/TYPE:
+- 2010/02/11, davidhsu, bug fixed
+
+* DIGEST:
+- System hangup when issue mp ctx command
+
+* TEST METHOD:
+- Issue "mp_ctx" command, then system will hang-up.
+
+* ROOT CAUSE:
+- When "mp_ctx" is executed, driver will read any keyboard key
+  (by uart) to break the transmission. Before transmitting, it will
+  disable uart interrupt, and then restore uart IMR when breaking.
+  The problem is uart IMR definition is wrong in driver. and which
+  will cause  interrupt dispatch routine can't break the loop when
+  uart interrupt is happened.
+
+* MODIFIED FILES:
+- 8192cd_mp.c - revision: 1.15
+
+* DESCRIPTION
+- Do not use a absolute value to access system register. Instead,
+  it will refer the pre-defined constant, defined in asm/rtl865x/platform.h
+  to access the register.
+
+-----------------------------------------------------------------------------
+
+
+** 2010-02-04 victorlo **
+
+- Refine WDS, set WDS peers to be BG devices as initial
+
+- Refine Desc number for RTL8198
+
+------------------------------------------------------------------------------
+
+** 2010-02-02 jimmylin **
+
+- Send AMPDU only when the peer responses to send BA
+  * Fix IOT with EeePC in WEP mode
+
+------------------------------------------------------------------------------
+
+** 2010-02-01 jimmylin **
+
+- Restrict TKIP in N mode for WiFi test
+
+------------------------------------------------------------------------------
+
+** 2010-01-27 jimmylin **
+
+- Modify Tx shortcut to support more than 1 ethernet mac
+
+------------------------------------------------------------------------------
+
+** 2010-01-26 jimmylin **
+
+- Modify AMPDU spacing for AES IOT
+
+- Fix wrong HT IE under auto channel
+
+------------------------------------------------------------------------------
+
+** 2010-01-25 victorlo **
+
+- Refine LED setting
+
+------------------------------------------------------------------------------
+
+** 2010-01-22 jimmylin **
+
+- Modify get_shortcut_dev for VAP interfaces
+
+- Rearrange code in iRam
+
+------------------------------------------------------------------------------
+
+** 2010-01-20 jimmylin **
+
+- Turn on Tx power addition per rate
+
+------------------------------------------------------------------------------
+
+** 2010-01-19 jimmylin **
+
+- Add Tx count limit for MP continueous Tx
+
+------------------------------------------------------------------------------
+
+** 2010-01-12 jimmylin **
+
+- Fix WDS fixed rate issue
+
+------------------------------------------------------------------------------
+
+** 2010-01-07 jimmylin **
+
+- Fix unaligned access while parsing IE
+
+- Fix temporary removing key and adding back flow
+
+------------------------------------------------------------------------------
+
+** 2010-01-06 jimmylin **
+
+- Enable client mode and repeater mode
+
+------------------------------------------------------------------------------
+
+** 2009-12-31 victorlo **
+
+- Display fw header info
+
+------------------------------------------------------------------------------
+
+** 2009-12-31 jimmylin **
+
+- Fix WDS no aggregation issue
+
+------------------------------------------------------------------------------
+
+** 2009-12-30 jimmylin **
+
+- Fix WDS mode VLC play failed issue
+
+- Fix AP-client mode VLC play failed issue
+
+------------------------------------------------------------------------------
+
+** 2009-12-28 jimmylin **
+
+- Modify for station rate infomation
+
+------------------------------------------------------------------------------
+
+** 2009-12-23 jimmylin **
+
+- Add more protection and disable RX_RDU interrupt for system stability
+
+------------------------------------------------------------------------------
+
+** 2009-12-21 victorlo **
+
+- Enable SGI tx for all interface
+
+------------------------------------------------------------------------------
+
+** 2009-12-18 victorlo **
+
+- Enable per station ampdu aggr size
+
+------------------------------------------------------------------------------
+
+** 2009-12-17 victorlo **
+
+- Enable two stages beacon pwr enhance for Intel IOT
+
+------------------------------------------------------------------------------
+
+** 2009-12-15 jimmylin **
+
+- Don't do beacon hang check when system just init
+
+------------------------------------------------------------------------------
+
+** 2009-12-14 victorlo **
+
+- Stop aggr tx when ADDBA decline received, for non-intel stations
+
+------------------------------------------------------------------------------
+
+** 2009-12-11 victorlo **
+
+- Enable IOT mode (for n stations of Realtek and Intel)
+
+------------------------------------------------------------------------------
+
+** 2009-12-07 jimmylin **
+
+- Merge modification for Kernel 2.6
+
+------------------------------------------------------------------------------
+
+** 2009-12-04 button **
+
+- Add PCIe power saving support
+
+- Set RTS initial rate to 24M
+
+- Using H2C cmd after fw download
+
+- Modify LLT table setting
+
+------------------------------------------------------------------------------
+
+** 2009-12-03 victorlo **
+
+- Enable CCK CCA dynamic adjust
+
+------------------------------------------------------------------------------
+
+** 2009-12-02 victorlo **
+
+- Enable per rate tx power increment
+
+------------------------------------------------------------------------------
+
+** 2009-12-02 jimmylin **
+
+- Add vxd AP and VAP interfaces to process dzqueue
+
+- Sync with 8192SE driver
+  * Fix 0xA0A in 0x83 in MP mode
+  * Update dynamic CCK CCA mechanism
+
+------------------------------------------------------------------------------
+
+** 2009-12-01 davidhsu **
+
+- Enlarge WPS IE buffer size to 260 bytes (PROBEIELEN).
+
+------------------------------------------------------------------------------
+
+** 2009-11-27 victorlo **
+
+- Refine MP for ctx
+  * Size down DMA burst size to avoid mp packet ctx hang
+  * Refine RCR to prevent any rx packet while ctx
+
+------------------------------------------------------------------------------
+
+** 2009-11-27 jimmylin **
+
+- Sync with 8192SE driver
+  * Add more protection for critical session
+  * Add timer_pending check before delete timer
+  * Add check in time-out function to see if driver is opened
+  * Add more protection for critical session
+  * Fix MBSSID power saving issue for PS-Poll
+
+------------------------------------------------------------------------------
+
+** 2009-11-26 jimmylin **
+
+- Modify Tx power offset range from -8 to +7
+
+- Add traffic and rate infomation for power saving
+
+------------------------------------------------------------------------------
+
+** 2009-11-26 victorlo **
+
+- Update IQK for 8192c, to version 091112
+
+- Add Realtek OUI bit for 8188c and 8192c
+
+------------------------------------------------------------------------------
+
+** 2009-11-24 jimmylin **
+
+- Fix Tx fragment bug
+
+------------------------------------------------------------------------------
+
+** 2009-11-20 jimmylin **
+
+- First release
+
